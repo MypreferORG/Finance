@@ -18,6 +18,9 @@ class CreateArticleRequest(BaseModel):
     cover_image: Optional[str] = None
     summary: Optional[str] = None
 
+    class Config:
+        orm_mode = True
+
 
 # 文章响应数据
 class ArticleResponse(BaseModel):
@@ -29,6 +32,9 @@ class ArticleResponse(BaseModel):
     summary: Optional[str] = None
     publish_date: datetime
 
+    class Config:
+        orm_mode = True
+
 
 # 文章摘要响应数据
 class ArticleAbstractResponse(BaseModel):
@@ -39,13 +45,21 @@ class ArticleAbstractResponse(BaseModel):
     summary: Optional[str] = None
     publish_date: datetime
 
+    class Config:
+        orm_mode = True
+
 
 # 创建公告请求数据
 class CreateAnnouncementRequest(BaseModel):
+    id: int
     title: str
     content: str
     author: Optional[str] = None
     expiration_date: Optional[datetime] = None
+    status: Optional[str] = None
+
+    class Config:
+        orm_mode = True
 
 
 # 公告摘要响应数据
@@ -54,6 +68,9 @@ class AnnouncementAbstractResponse(BaseModel):
     title: str
     publish_date: datetime
     expiration_date: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
 
 
 # 公告响应数据
@@ -65,6 +82,9 @@ class AnnouncementResponse(BaseModel):
     publish_date: datetime
     expiration_date: Optional[datetime] = None
 
+    class Config:
+        orm_mode = True
+
 
 # 更新公告请求数据
 class UpdateAnnouncementRequest(BaseModel):
@@ -72,3 +92,6 @@ class UpdateAnnouncementRequest(BaseModel):
     content: Optional[str] = None
     cover_image: Optional[str] = None
     summary: Optional[str] = None
+
+    class Config:
+        orm_mode = True

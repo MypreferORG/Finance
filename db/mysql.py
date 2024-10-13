@@ -37,10 +37,14 @@ DB_ORM_CONFIG = {
 
 
 async def register_mysql(app: FastAPI):
-    # 注册数据库
+    """
+    注册数据库
+    :param app:
+    :return:
+    """
     register_tortoise(
         app,
         config=DB_ORM_CONFIG,
-        generate_schemas=False,
+        generate_schemas=True,
         add_exception_handlers=True,
     )

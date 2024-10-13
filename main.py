@@ -8,12 +8,12 @@
 from fastapi import FastAPI
 from core.Events import startup, stopping
 from api.base import api_router
+from dotenv import load_dotenv
 
 
 app = FastAPI(
     
 )
-
 
 # 事件监听
 app.add_event_handler("startup", startup(app))

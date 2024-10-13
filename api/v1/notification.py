@@ -10,7 +10,7 @@ from schemas import GetNotificationsResponse
 router = APIRouter()
 
 
-@router.get("/notifications/{notification_type}", summary="获取推送消息", response_model=GetNotificationsResponse)
+@router.get("/{notification_type}", summary="获取推送消息", response_model=GetNotificationsResponse)
 async def get_notifications(notification_type: str):
     # 获取通知逻辑
     # notification_type: 通知类别: 公告通知, 推文通知, 还款提醒

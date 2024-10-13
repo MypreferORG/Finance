@@ -4,3 +4,5 @@
 # @Author : Myprefer
 # @Des: 工具函数
 """
+
+from .random import random_str

@@ -6,9 +6,9 @@
 """
 
 from .article import Article, Announcement
-from .user import UserAuth, UserSignLog, UserApplication, UserBehavior
+from .user import UserAuth, UserSignLog, UserApplication, UserBehavior, UserProfile
 from .loan import LoanRecord, RepaymentRecord
 
 __all__ = ["Article", "Announcement", "UserAuth",
-           "UserSignLog", "UserApplication", "UserBehavior",
+           "UserSignLog", "UserApplication", "UserBehavior", "UserProfile",
            "LoanRecord", "RepaymentRecord"]

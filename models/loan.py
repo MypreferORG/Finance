@@ -14,7 +14,7 @@ class LoanRecord(Model):
     贷款记录表：用于记录所有用户的借款信息
     """
     id = fields.IntField(pk=True)
-    user = fields.ForeignKeyField("finance.UserAuth", related_name="loan_record", description="关联的用户")
+    user = fields.ForeignKeyField("finance.UserAuth", related_name="loan_records", description="关联的用户")
     amount = fields.DecimalField(max_digits=10, decimal_places=2, description="借款金额")
     interest_rate = fields.DecimalField(max_digits=5, decimal_places=2, description="年利率")
     loan_term = fields.IntField(description="贷款期限（以月为单位）")
@@ -37,8 +37,8 @@ class RepaymentRecord(Model):
     还款记录表：用于记录所有用户的还款信息
     """
     id = fields.IntField(pk=True)
-    loan = fields.ForeignKeyField("finance.LoanRecord", related_name="repayment_record", description="关联的贷款记录")
-    user = fields.ForeignKeyField("finance.UserAuth", related_name="repayment_record", description="关联的用户")
+    loan = fields.ForeignKeyField("finance.LoanRecord", related_name="repayment_records", description="关联的贷款记录")
+    user = fields.ForeignKeyField("finance.UserAuth", related_name="repayment_records", description="关联的用户")
     amount = fields.DecimalField(max_digits=10, decimal_places=2, description="还款金额")
     repayment_date = fields.DatetimeField(auto_now_add=True, description="还款时间")
     status = fields.CharField(max_length=20, default="successful",

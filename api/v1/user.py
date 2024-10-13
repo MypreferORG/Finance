@@ -5,17 +5,24 @@
 # @Des: 个人信息管理相关接口
 """
 
-from fastapi import APIRouter
-from schemas import UserProfile, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
+from fastapi import APIRouter, Depends
+from models import UserAuth, UserProfile
+from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
+from core.dependences import get_current_user
 
 router = APIRouter()
 
 
-@router.get("/profile", summary="查看个人信息", response_model=UserProfile)
-async def get_profile():
-    # 获取个人信息逻辑
-    # todo: get_profile 查看个人信息逻辑
-    pass
+@router.get("/profile", summary="查看个人信息", response_model=UserProfileResponse)
+async def get_profile(user: UserAuth = Depends(get_current_user)):
+    """
+    查看个人信息逻辑
+    :param user: UserAuth
+    :return: user_profile: UserProfileResponse
+    """
+    user_profile = await UserProfile.get_or_none(user=user)
+    # print(user_profile.id)
+    return user_profile
 
 
 @router.post("/profile/update", summary="编辑个人信息")

@@ -14,12 +14,18 @@ from typing import List
 class SupportRequest(BaseModel):
     contact_info: str
 
+    class Config:
+        orm_mode = True
+
 
 # 支持请求响应数据
 class SupportResponse(BaseModel):
     request_id: int
     status: str
     submitted_at: datetime
+
+    class Config:
+        orm_mode = True
 
 
 # 支持历史响应数据

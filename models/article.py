@@ -22,7 +22,7 @@ class Article(Model):
     status = fields.CharField(max_length=20, default="published", description="文章状态（如：published、hidden、deleted等）")
     cover_image = fields.CharField(max_length=255, null=True, description="封面图片URL")
     summary = fields.TextField(null=True, description="文章摘要或简介")
-    # views = fields.IntField(default=0, description="阅读次数")
+    views = fields.IntField(default=0, description="阅读次数")
 
     class Meta:
         table = "article"

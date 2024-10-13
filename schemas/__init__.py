@@ -51,7 +51,7 @@ from .support import (
 )
 
 from .user import (
-    UserProfile,
+    UserProfileResponse,
     UpdateProfileRequest,
     VerifyAcademicRequest,
     VerifyIdentityRequest

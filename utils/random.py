@@ -2,7 +2,7 @@
 """
 # @Create on : 2024/10/10 23:06
 # @Author : Myprefer
-# @Des: 唯一随机字符
+# @Des: 生成唯一随机字符串
 """
 
 import hashlib

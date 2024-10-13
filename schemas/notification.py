@@ -17,6 +17,9 @@ class Notification(BaseModel):
     sent_at: datetime
     type: str
 
+    class Config:
+        orm_mode = True
+
 
 # 获取通知响应数据
 class GetNotificationsResponse(BaseModel):
