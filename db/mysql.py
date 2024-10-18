@@ -27,6 +27,24 @@ DB_ORM_CONFIG = {
                 'database': getenv("MYSQL_DB"),
             }
         },
+        # "finance": {
+        #     'engine': 'tortoise.backends.asyncpg',
+        #     "credentials": {
+        #         'host': getenv("POSTGRES_HOST"),
+        #         'user': getenv("POSTGRES_USER"),
+        #         'password': getenv("POSTGRES_PASSWORD"),
+        #         'port': int(getenv("POSTGRES_PORT")),
+        #         'database': getenv("POSTGRES_DB"),
+        #     }
+        # },
+        # "finance": {
+        #     'engine': 'tortoise.backends.odbc',
+        #     "credentials": {
+        #         'dsn': getenv("ORACLE_DSN"),
+        #         'user': getenv("ORACLE_USER"),
+        #         'password': getenv("ORACLE_PASSWORD"),
+        #     }
+        # },
     },
     "apps": {
         "finance": {"models": ["models.user", "models.loan", "models.article", "models.notification"], "default_connection": "finance"},

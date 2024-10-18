@@ -4,10 +4,9 @@
 # @Author : Myprefer
 # @Des: 客户支持服务(客服)接口
 """
-
+from typing import List
 from fastapi import APIRouter
-
-from schemas import SupportResponse, SupportHistoryResponse, SupportRequest
+from schemas import SupportResponse, SupportRequest
 
 router = APIRouter()
 
@@ -19,7 +18,7 @@ async def submit_support_request(request: SupportRequest):
     pass
 
 
-@router.get("/history", summary="查看客服聊天历史", response_model=SupportHistoryResponse)
+@router.get("/history", summary="查看客服聊天历史", response_model=List[SupportResponse])
 async def support_history():
     # 获取支持历史逻辑
     # todo: support_history 获取支持历史逻辑

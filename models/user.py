@@ -68,9 +68,10 @@ class UserProfile(Model):
     address = fields.TextField(null=True, description="住址")
     date_of_birth = fields.DateField(null=True, description="出生年月")
     credit_auth = fields.BooleanField(default=False, description="学信网认证，学生专属")
-    bank_account = fields.CharField(max_length=50, null=True, description="银行卡号")
     profile_picture = fields.CharField(max_length=255, null=True, description="头像URL")
     income = fields.DecimalField(max_digits=10, decimal_places=2, null=True, description="月收入")
+    max_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="最大借款额度")
+    bank_account = fields.CharField(max_length=50, null=True, description="银行卡号")
 
     created_at = fields.DatetimeField(auto_now_add=True, description="记录创建时间")
     updated_at = fields.DatetimeField(auto_now=True, description="记录更新时间")

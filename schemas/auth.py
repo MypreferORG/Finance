@@ -47,5 +47,11 @@ class ForgotPasswordRequest(BaseModel):
 
 # 重置密码请求数据
 class ResetPasswordRequest(BaseModel):
+    phone_number: str
     verification_code: str
     new_password: str
+
+
+class SendVerificationCodeRequest(BaseModel):
+    phone_number: str
+    code_type: str

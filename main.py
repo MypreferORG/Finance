@@ -8,7 +8,6 @@
 from fastapi import FastAPI
 from core.Events import startup, stopping
 from api.base import api_router
-from dotenv import load_dotenv
 
 
 app = FastAPI(
@@ -21,3 +20,8 @@ app.add_event_handler("shutdown", stopping(app))
 
 # 注册API路由
 app.include_router(api_router)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8888)

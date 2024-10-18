@@ -18,9 +18,12 @@ class LoanRecord(Model):
     amount = fields.DecimalField(max_digits=10, decimal_places=2, description="借款金额")
     interest_rate = fields.DecimalField(max_digits=5, decimal_places=2, description="年利率")
     loan_term = fields.IntField(description="贷款期限（以月为单位）")
-    status = fields.CharField(max_length=20, default="active", description="贷款状态（如：active、completed、defaulted等）")
+    status = fields.CharField(max_length=20, default="defaulted", description="贷款状态（如：active、completed、defaulted、overdue等）")
+    repayment_method = fields.CharField(max_length=20, description="还款方式(等额本金/等额本息)")
     repayment_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=0.00, description="已还款金额")
-    repayment_schedule = fields.TextField(description="还款计划（如每期还款金额、还款日期等）")
+    repayment_schedule = fields.TextField(null=True, description="还款计划（如每期还款金额、还款日期等）")
+    usage = fields.CharField(max_length=50, description="借款用途")
+    bank_account = fields.CharField(max_length=50, description="收款/还款银行账户")
     created_at = fields.DatetimeField(auto_now_add=True, description="贷款申请时间")
     updated_at = fields.DatetimeField(auto_now=True, description="贷款信息更新时间")
 
@@ -51,3 +54,15 @@ class RepaymentRecord(Model):
 
     def __str__(self):
         return f"RepaymentRecord(id={self.id}, loan_id={self.loan.id}, user={self.user.username}, amount={self.amount}, status={self.status})"
+
+
+class InterestRate(Model):
+    """
+    储存贷款利率
+    """
+    interest_rate = fields.DecimalField(defaule=10 , max_digits=5, decimal_places=2, description="年利率")
+
+    class Meta:
+        table = "rate"
+
+

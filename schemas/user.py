@@ -4,16 +4,17 @@
 # @Author : Myprefer
 # @Des: 用户信息相关的schema模型
 """
-from datetime import datetime, date
+from datetime import date
 from decimal import Decimal
 from typing import Optional
-
 from pydantic import BaseModel
 
 
 # 用户个人信息数据
 class UserProfileResponse(BaseModel):
-    # todo: UserProfileResponse 用户个人信息数据
+    """
+    用户个人信息数据
+    """
     username: str  # 唯一用户名
     full_name: Optional[str]  # 姓名
     phone_number: str  # 电话号码
@@ -29,7 +30,7 @@ class UserProfileResponse(BaseModel):
     income: Optional[Decimal]  # 月收入
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 编辑用户个人信息请求
@@ -40,6 +41,7 @@ class UpdateProfileRequest(BaseModel):
 
 # 实名认证请求
 class VerifyIdentityRequest(BaseModel):
+    # todo: VerifyIdentityRequest 实名认证请求
     real_name: str
     id_card_number: str
 

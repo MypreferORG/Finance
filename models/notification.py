@@ -9,7 +9,7 @@ from tortoise import fields
 from tortoise.models import Model
 
 
-class Notification(Model):
+class NotificationResponse(Model):
     """
     通知表：用于记录系统发送给用户的通知信息
     """
@@ -27,4 +27,4 @@ class Notification(Model):
         indexes = [("target_user", "created_at")]  # 根据用户和通知时间创建索引
 
     def __str__(self):
-        return f"Notification(id={self.id}, title={self.title}, user={self.target_user.username}, status={self.status})"
+        return f"NotificationResponse(id={self.id}, title={self.title}, user={self.target_user.username}, status={self.status})"

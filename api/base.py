@@ -6,7 +6,7 @@
 """
 
 from fastapi import APIRouter
-from api.v1 import announcement, article, auth, borrow, loan, notification, support, user
+from api.v1 import announcement, article, auth, loan, notification, support, user
 
 # 创建一个APIRouter实例，用于统一管理所有API
 api_router = APIRouter()
@@ -19,4 +19,3 @@ api_router.include_router(notification.router, prefix="/notification", tags=["�
 api_router.include_router(article.router, prefix="/article", tags=["文章管理"])
 api_router.include_router(announcement.router, prefix="/announcement", tags=["公告管理"])
 api_router.include_router(support.router, prefix="/support", tags=["客户支持"])
-api_router.include_router(borrow.router, prefix="/borrow", tags=["借贷信息管理"])

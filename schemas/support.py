@@ -7,7 +7,6 @@
 
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List
 
 
 # 支持请求数据
@@ -15,7 +14,7 @@ class SupportRequest(BaseModel):
     contact_info: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 支持请求响应数据
@@ -25,9 +24,5 @@ class SupportResponse(BaseModel):
     submitted_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
-
-# 支持历史响应数据
-class SupportHistoryResponse(BaseModel):
-    requests: List[SupportResponse]

@@ -25,29 +25,25 @@ from .auth import (
     ResetPasswordRequest
 )
 
-from .borrow import (
-    BorrowInfoResponse,
-    BorrowQuotaResponse,
-)
-
 from .loan import (
     LoanStatusResponse,
     LoanApplicationRequest,
     LoanApplicationResponse,
     RepaymentPlanResponse,
     RepaymentRequest,
+    RepaymentPlanInfo,
+    RepaymentResponse,
+    RepaymentPlan
 )
 
 from .notification import (
-    Notification,
-    GetNotificationsResponse,
-    GetLoanNotificationsResponse
+    NotificationResponse,
+    LoanNotificationsResponse
 )
 
 from .support import (
     SupportRequest,
     SupportResponse,
-    SupportHistoryResponse
 )
 
 from .user import (

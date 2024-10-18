@@ -19,7 +19,7 @@ class CreateArticleRequest(BaseModel):
     summary: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 文章响应数据
@@ -33,7 +33,7 @@ class ArticleResponse(BaseModel):
     publish_date: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 文章摘要响应数据
@@ -46,7 +46,7 @@ class ArticleAbstractResponse(BaseModel):
     publish_date: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 创建公告请求数据
@@ -59,7 +59,7 @@ class CreateAnnouncementRequest(BaseModel):
     status: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 公告摘要响应数据
@@ -70,7 +70,7 @@ class AnnouncementAbstractResponse(BaseModel):
     expiration_date: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 公告响应数据
@@ -83,7 +83,7 @@ class AnnouncementResponse(BaseModel):
     expiration_date: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # 更新公告请求数据
@@ -94,4 +94,4 @@ class UpdateAnnouncementRequest(BaseModel):
     summary: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True

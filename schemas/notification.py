@@ -7,26 +7,21 @@
 
 from datetime import datetime
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
 
 # 通知消息响应数据
-class Notification(BaseModel):
+class NotificationResponse(BaseModel):
     title: Optional[str]
     content: str
     sent_at: datetime
     type: str
 
     class Config:
-        orm_mode = True
-
-
-# 获取通知响应数据
-class GetNotificationsResponse(BaseModel):
-    notifications: List[Notification]
+        from_attributes = True
 
 
 # 获取借款还款通知响应数据
-class GetLoanNotificationsResponse(BaseModel):
-    # todo: GetLoanNotificationsResponse 获取借款还款通知响应数据
+class LoanNotificationsResponse(BaseModel):
+    # todo: LoanNotificationsResponse 获取借款还款通知响应数据
     pass

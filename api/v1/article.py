@@ -81,8 +81,8 @@ async def list_articles():
     获取文章列表逻辑
     """
     # todo: list_articles 获取文章推荐列表逻辑
-
-    pass
+    articles = await Article.all().order_by('-publish_date').limit(20)
+    return articles
 
 
 @router.get("/search/{query}", summary="搜索文章", response_model=List[ArticleAbstractResponse])
@@ -90,20 +90,19 @@ async def search_article(query: str):
     """
     搜索文章逻辑
     :param query: 搜索关键词
-    :return articles 搜索到的文章列表
+    :return articles 搜索到的文章摘要列表
     """
-    # todo: search_article 搜索文章逻辑
-
     # 使用包含查询字符串的方式查询文章
     # articles = await Article.filter(
     #     title__icontains=query | content__icontains=query  # 查询标题或内容中包含关键词的文章
     # ).order_by('-publish_date')
-    # articles = await Article.filter(
-    #     Article.title.ilike(f"%{query}")
-    # ).order_by('-publish_date')
 
-    # return articles  # 返回匹配的文章摘要信息
-    pass
+    all_articles = await Article.all()
+    articles = [article for article in all_articles if
+                query.lower() in article.title.lower() or query.lower() in article.content.lower()]
+    articles = sorted(articles, key=lambda x: x.publish_date, reverse=True)
+
+    return articles  # 返回匹配的文章摘要信息
 
 
 @router.get("/read/{article_id}", summary="查看文章", response_model=ArticleResponse)
