@@ -25,7 +25,7 @@ async def publish_article(
     :return
     """
     # 验证用户角色是否为 admin
-    if user.role != "admin" or user.role != "root":
+    if user.role != "admin" and user.role != "root":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="权限不足"
@@ -57,7 +57,7 @@ async def delete_article(
     :return
     """
     # 验证用户角色是否为 admin
-    if user.role != "admin" or user.role != "root":
+    if user.role != "admin" and user.role != "root":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="权限不足"

@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-# @Create on : 2024/10/10 14:50
+# @Create on : 2024/11/13 12:59
 # @Author : Myprefer
-# @Des: 公告相关接口
+# @Des: 
 """
 
-from typing import List
+from typing import List, Optional
 from core.dependences import get_current_user
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Query
 from models import Announcement, UserAuth
 from schemas import (CreateAnnouncementRequest,
                      AnnouncementResponse,
                      UpdateAnnouncementRequest,
                      AnnouncementAbstractResponse)
+from schemas.article import PaginatedResponse, PaginatedData
 
 router = APIRouter()
 
@@ -47,17 +48,47 @@ async def publish_announcement(
     }
 
 
-@router.get("/list", summary="查看公告列表", response_model=List[AnnouncementAbstractResponse])
-async def list_announcements():
+@router.get("/search", summary="查看公告列表", response_model=PaginatedResponse)
+async def list_announcements(
+    pageNo: int = Query(1, alias="pageNo", ge=1),
+    pageSize: int = Query(10, alias="pageSize", ge=1),
+    title: Optional[str] = Query(None, alias="title"),
+    status: Optional[str] = Query(None, alias="status"),
+    author: Optional[str] = Query(None, alias="author"),
+):
     """
     获取公告列表逻辑
     :return: announcements: 公告摘要列表
     """
-    # 查询所有公告，按发布日期降序排列
-    announcements = await Announcement.all().order_by('-publish_date')
+    # 计算要跳过的记录数量
+    skip = (pageNo - 1) * pageSize
 
-    # 返回公告列表，自动转换为 Pydantic 模型格式
-    return announcements
+    # 动态构建查询条件
+    query = Announcement.all()
+    if title:
+        query = query.filter(title__icontains=title)
+    if status:
+        query = query.filter(status__icontains=status)
+    if author:
+        query = query.filter(author__icontains=author)
+
+    # 获取符合条件的总记录数
+    total_count = await query.count()
+
+    # 获取当前页的公告数据
+    announcements = await query.order_by('-publish_date').offset(skip).limit(pageSize)
+
+    # 格式化数据并返回
+    response_data = PaginatedResponse(
+        success=True,
+        data=PaginatedData(
+            total=total_count,
+            pageNo=pageNo,
+            pageSize=pageSize,
+            records=announcements
+        )
+    )
+    return response_data
 
 
 @router.get("/{announcement_id}", summary="查看公告", response_model=AnnouncementResponse)
@@ -78,12 +109,14 @@ async def read_announcements(announcement_id: int):
     return announcement
 
 
-@router.post("/update", summary="更新公告")
+@router.post("/update/{announcement_id}", summary="更新公告")
 async def update_announcement(
+        announcement_id: int,
         announcement: CreateAnnouncementRequest,
         user: UserAuth = Depends(get_current_user)):
     """
     更新公告逻辑
+    :param announcement_id:
     :param user: 当前用户
     :param announcement: 公告详细信息
     :retur
@@ -95,7 +128,7 @@ async def update_announcement(
             detail="权限不足"
         )
     # 根据公告ID获取公告
-    existing_announcement = await Announcement.get_or_none(id=announcement.id)
+    existing_announcement = await Announcement.get_or_none(id=announcement_id)
 
     # 如果公告不存在，抛出404错误
     if not existing_announcement:

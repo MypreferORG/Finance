@@ -27,7 +27,7 @@ DB_ORM_CONFIG = {
                 'database': getenv("MYSQL_DB"),
             }
         },
-        # "finance": {
+        # # "finance": {
         #     'engine': 'tortoise.backends.asyncpg',
         #     "credentials": {
         #         'host': getenv("POSTGRES_HOST"),
@@ -43,6 +43,12 @@ DB_ORM_CONFIG = {
         #         'dsn': getenv("ORACLE_DSN"),
         #         'user': getenv("ORACLE_USER"),
         #         'password': getenv("ORACLE_PASSWORD"),
+        #     }
+        # },
+        # "finance": {
+        #     'engine': 'tortoise.backends.sqlite',
+        #     'credentials': {
+        #         'file_path': 'D:\\ML\\finance\\sqlite-tools-win-x64-3460100\\finance.db',  # SQLite 数据库文件路径
         #     }
         # },
     },
