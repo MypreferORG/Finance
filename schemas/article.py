@@ -6,7 +6,7 @@
 """
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -51,7 +51,6 @@ class ArticleAbstractResponse(BaseModel):
 
 # 创建公告请求数据
 class CreateAnnouncementRequest(BaseModel):
-    id: int
     title: str
     content: str
     author: Optional[str] = None
@@ -64,6 +63,13 @@ class CreateAnnouncementRequest(BaseModel):
 
 # 公告摘要响应数据
 class AnnouncementAbstractResponse(BaseModel):
+    """
+    公告摘要响应数据
+    id: 公告ID
+    title: 公告标题
+    publish_date: 公告发布时间
+    expiration_date: 公告过期时间（可选）
+    """
     id: int
     title: str
     publish_date: datetime
@@ -75,15 +81,38 @@ class AnnouncementAbstractResponse(BaseModel):
 
 # 公告响应数据
 class AnnouncementResponse(BaseModel):
+    """
+    公告响应数据
+    """
     id: int
     title: str
     content: str
+    status: str
     author: Optional[str] = None
     publish_date: datetime
     expiration_date: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class PaginatedData(BaseModel):
+    """
+    分页数据
+    """
+    total: int
+    pageNo: int
+    pageSize: int
+    records: List[AnnouncementResponse]
+
+
+class PaginatedResponse(BaseModel):
+    """
+    带分页信息的公告列表响应数据
+    """
+    success: bool
+    data: PaginatedData
+
 
 
 # 更新公告请求数据
