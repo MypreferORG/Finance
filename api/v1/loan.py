@@ -222,6 +222,11 @@ async def repayment(request: RepaymentRequest, user: UserAuth = Depends(get_curr
         loan_record.status = "completed"  # 完成还款，更新状态
     await loan_record.save()
 
+    # 更新用户的已借款金额
+    user_profile = await UserProfile.get_or_none(user=user)
+    user_profile.loaned_amount -= Decimal(request.amount)
+    await user_profile.save()
+
     # 创建还款记录
     await RepaymentRecord.create(
         loan=loan_record,

@@ -11,8 +11,6 @@ from api.v2 import auth, user, loan, notification, article, announcement, suppor
 # 创建一个APIRouter实例，用于统一管理所有管理API
 admin_api_router = APIRouter(
     prefix="/v2",
-    tags=["管理端API"],
-    responses={404: {"description": "Not found"}},
 )
 
 # 注册所有子路由

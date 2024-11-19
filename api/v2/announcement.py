@@ -13,7 +13,7 @@ from schemas import (CreateAnnouncementRequest,
                      AnnouncementResponse,
                      UpdateAnnouncementRequest,
                      AnnouncementAbstractResponse)
-from schemas.article import PaginatedResponse, PaginatedData
+from schemas.article import PaginatedAnnouncementResponse, PaginatedAnnouncementData
 
 router = APIRouter()
 
@@ -48,7 +48,7 @@ async def publish_announcement(
     }
 
 
-@router.get("/search", summary="查看公告列表", response_model=PaginatedResponse)
+@router.get("/search", summary="查看公告列表", response_model=PaginatedAnnouncementResponse)
 async def list_announcements(
     pageNo: int = Query(1, alias="pageNo", ge=1),
     pageSize: int = Query(10, alias="pageSize", ge=1),
@@ -79,9 +79,9 @@ async def list_announcements(
     announcements = await query.order_by('-publish_date').offset(skip).limit(pageSize)
 
     # 格式化数据并返回
-    response_data = PaginatedResponse(
+    response_data = PaginatedAnnouncementResponse(
         success=True,
-        data=PaginatedData(
+        data=PaginatedAnnouncementData(
             total=total_count,
             pageNo=pageNo,
             pageSize=pageSize,
@@ -89,24 +89,6 @@ async def list_announcements(
         )
     )
     return response_data
-
-
-@router.get("/{announcement_id}", summary="查看公告", response_model=AnnouncementResponse)
-async def read_announcements(announcement_id: int):
-    """
-    查看公告逻辑
-    :param announcement_id: 公告id
-    :return AnnouncementResponse: 公告详细信息
-    """
-    # 根据公告ID查询公告
-    announcement = await Announcement.get_or_none(id=announcement_id)
-
-    # 如果未找到公告，返回404错误
-    if not announcement:
-        raise HTTPException(status_code=404, detail="公告未找到")
-
-    # 返回公告信息
-    return announcement
 
 
 @router.post("/update/{announcement_id}", summary="更新公告")
@@ -149,7 +131,7 @@ async def update_announcement(
     # 保存更新后的公告
     await existing_announcement.save()
 
-    return {"msg": "公告更新成功", "announcement_id": existing_announcement.id}
+    return {"msg": "公告更新成功", "announcement_id": announcement_id}
 
 
 @router.delete("/delete/{announcement_id}", summary="删除公告")

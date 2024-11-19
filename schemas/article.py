@@ -22,6 +22,20 @@ class CreateArticleRequest(BaseModel):
         from_attributes = True
 
 
+# 更新文章请求数据
+class UpdateArticleRequest(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    author: Optional[str] = None
+    cover_image: Optional[str] = None
+    summary: Optional[str] = None
+    status: Optional[str] = None
+
+
+    class Config:
+        from_attributes = True
+
+
 # 文章响应数据
 class ArticleResponse(BaseModel):
     id: int
@@ -31,6 +45,9 @@ class ArticleResponse(BaseModel):
     cover_image: Optional[str] = None
     summary: Optional[str] = None
     publish_date: datetime
+    views: int
+    status: str
+
 
     class Config:
         from_attributes = True
@@ -47,6 +64,20 @@ class ArticleAbstractResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# 分页数据
+class PaginatedArticleData(BaseModel):
+    total: int
+    pageNo: int
+    pageSize: int
+    records: List[ArticleResponse]
+
+
+# 带分页信息的文章列表响应数据
+class PaginatedArticleResponse(BaseModel):
+    success: bool
+    data: PaginatedArticleData
 
 
 # 创建公告请求数据
@@ -96,7 +127,7 @@ class AnnouncementResponse(BaseModel):
         from_attributes = True
 
 
-class PaginatedData(BaseModel):
+class PaginatedAnnouncementData(BaseModel):
     """
     分页数据
     """
@@ -106,17 +137,18 @@ class PaginatedData(BaseModel):
     records: List[AnnouncementResponse]
 
 
-class PaginatedResponse(BaseModel):
+class PaginatedAnnouncementResponse(BaseModel):
     """
     带分页信息的公告列表响应数据
     """
     success: bool
-    data: PaginatedData
+    data: PaginatedAnnouncementData
 
 
-
-# 更新公告请求数据
 class UpdateAnnouncementRequest(BaseModel):
+    """
+    更新公告请求数据
+    """
     title: Optional[str] = None
     content: Optional[str] = None
     cover_image: Optional[str] = None
