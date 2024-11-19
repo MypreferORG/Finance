@@ -21,9 +21,32 @@ from schemas import (LoanApplicationResponse,
                      RepaymentRequest,
                      RepaymentPlan,
                      RepaymentPlanInfo)
+from schemas.loan import LoanQuotaResponse
 from services.repayment_schedule import generate_repayment_schedule
 
 router = APIRouter()
+
+
+@router.get("/apply/check", summary="检查贷款额度", response_model=LoanQuotaResponse)
+async def check_loan_quota(user: UserAuth = Depends(get_current_user)):
+    """
+    检查贷款额度逻辑
+    :param user: 当前登录用户
+    :return: 额度
+    """
+    # 查询用户
+    user_profile = await UserProfile.get_or_none(user=user)
+    if user_profile is None:
+        raise HTTPException(status_code=404, detail="用户未找到")
+
+    # 检查用户个人信息是否完整
+    if not user_profile.is_profile_completed:
+        raise HTTPException(status_code=400, detail="请先完善个人信息")
+
+    if user_profile.max_amount <= 0 or user_profile.credit <= 0 or user_profile.loaned_amount >= user_profile.max_amount:
+        raise HTTPException(status_code=400, detail="额度不足")
+
+    return user_profile
 
 
 @router.post("/apply/confirm", summary="申请贷款", response_model=LoanApplicationResponse)
@@ -39,7 +62,9 @@ async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(g
         raise HTTPException(status_code=404, detail="用户未找到")
 
     # 检查借款金额是否有效
-    if request.amount <= 0 and request.amount <= user_profile.max_amount:
+    amount = request.amount
+    loaned_amount = user_profile.loaned_amount
+    if request.amount <= 0 or request.amount >= user_profile.max_amount or amount + loaned_amount > user_profile.max_amount:
         raise HTTPException(status_code=400, detail="借款金额异常")
 
     # 查询当前利率
@@ -49,13 +74,18 @@ async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(g
     repayment_schedule = generate_repayment_schedule(amount=request.amount,
                                                      loan_term=request.loan_term,
                                                      interest_rate=current_interest_rate,
-                                                     repayment_method=request.repayment_method)
+                                                     repayment_method="等额本息" if request.repayment_method == 1 else "等额本金")
 
     # todo: 贷款功能具体实现
     # transfer_success = await transfer_loan_to_bank_account(user_profile, request.amount)
-    #
-    # if not transfer_success:
-    #     raise HTTPException(status_code=500, detail="贷款转账失败")
+    transfer_success = True
+
+    if not transfer_success:
+        raise HTTPException(status_code=500, detail="贷款转账失败")
+
+    # 更新用户的已借款金额
+    user_profile.loaned_amount += amount
+    await user_profile.save()
 
     # 创建贷款记录
     new_loan = await LoanRecord.create(
@@ -64,7 +94,7 @@ async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(g
         interest_rate=current_interest_rate,
         loan_term=request.loan_term,
         status="active",
-        repayment_method=request.repayment_method,
+        repayment_method="等额本息" if request.repayment_method == 1 else "等额本金",
         repayment_schedule=repayment_schedule,
         usage=request.usage,
         bank_account=user_profile.bank_account,

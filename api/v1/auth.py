@@ -9,8 +9,9 @@ import re
 from datetime import timedelta
 import random
 from typing import Union
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from config import settings
+from core.dependences import get_current_user
 from db.redis import sys_cache
 from models import UserAuth, UserProfile, UserSignLog, UserApplication, UserBehavior
 from core.Auth import verify_password, create_access_token, get_password_hash
@@ -180,6 +181,8 @@ async def reset_password(request: Request, body: ResetPasswordRequest):
                              ip_address=request.headers.get("X-Forwarded-For", ""),
                              user_agent=request.headers.get("user-agent", ""), )
 
+    return {"msg": "密码已重置"}
+
 
 @router.post("/send-verification-code", summary="发送验证码")
 async def send_verification_code(request: SendVerificationCodeRequest):
@@ -192,3 +195,19 @@ async def send_verification_code(request: SendVerificationCodeRequest):
         raise HTTPException(status_code=400, detail="验证码类型错误")
     await generate_and_send_code(request.phone_number)
     return {"msg": "验证码已发送"}
+
+
+@router.post("/logout", summary="用户登出")
+async def logout(request: Request, user: UserAuth = Depends(get_current_user)):
+    """
+    用户登出逻辑
+    :param request:
+    :param user: 当前登录用户
+    :return:
+    """
+    cache = await sys_cache()
+    await cache.delete(f"jwt:{user.id}")
+    await UserSignLog.create(user=user, action="logout",
+                             ip_address=request.headers.get("X-Forwarded-For", ""),
+                             user_agent=request.headers.get("user-agent", ""), )
+    return {"msg": "用户已登出"}

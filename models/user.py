@@ -64,14 +64,17 @@ class UserProfile(Model):
     gender = fields.CharField(max_length=10, null=True, description="性别")
     id_card_number = fields.CharField(max_length=18, null=True, unique=True, description="身份证号")
     id_card_expiry = fields.DateField(null=True, description="身份证有效期")
+    bank_account = fields.CharField(max_length=50, null=True, description="银行卡号")
     profession = fields.CharField(max_length=50, null=True, description="职业类别")
     address = fields.TextField(null=True, description="住址")
     date_of_birth = fields.DateField(null=True, description="出生年月")
-    credit_auth = fields.BooleanField(default=False, description="学信网认证，学生专属")
+    student_verified = fields.BooleanField(default=False, description="学信网认证，学生专属")
     profile_picture = fields.CharField(max_length=255, null=True, description="头像URL")
     income = fields.DecimalField(max_digits=10, decimal_places=2, null=True, description="月收入")
     max_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="最大借款额度")
-    bank_account = fields.CharField(max_length=50, null=True, description="银行卡号")
+    credit = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="信用分数")
+    loaned_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="已经贷款金额")
+    is_profile_completed = fields.BooleanField(default=False, description="是否已经完善个人信息")
 
     created_at = fields.DatetimeField(auto_now_add=True, description="记录创建时间")
     updated_at = fields.DatetimeField(auto_now=True, description="记录更新时间")
@@ -116,6 +119,7 @@ class UserApplication(Model):
     train_app_usage = fields.IntField(null=True, description="当月火车类应用使用次数")
     travel_info_app_usage = fields.IntField(null=True, description="当月旅游资讯类应用使用次数")
     credit_score = fields.FloatField(null=True, description="用户信用分")
+
     created_at = fields.DatetimeField(auto_now_add=True, description="记录创建时间")
     updated_at = fields.DatetimeField(auto_now=True, description="记录更新时间")
 
@@ -139,6 +143,7 @@ class UserBehavior(Model):
     max_loan_amount_180_days = fields.FloatField(null=True, description="180天内单笔放款金额最大值")
     min_loan_amount_180_days = fields.FloatField(null=True, description="180天内单笔放款金额最小值")
     apply_loan_company_number = fields.IntField(null=True, description="申请贷款机构数")
+
     created_at = fields.DatetimeField(auto_now_add=True, description="记录创建时间")
     updated_at = fields.DatetimeField(auto_now=True, description="记录更新时间")
 

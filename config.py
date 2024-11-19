@@ -36,7 +36,7 @@ class Config(BaseSettings):
     JWT_ALGORITHM = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES = 24 * 60
 
-    JWT_TOKEN_URL = "auth/login"
+    JWT_TOKEN_URL = "v1/auth/login"
 
     # 二维码过期时间
     QRCODE_EXPIRE = 60 * 1

@@ -10,7 +10,7 @@ from decimal import Decimal
 from models import LoanRecord
 
 
-def generate_repayment_schedule(amount: float, loan_term: int, interest_rate: Decimal, repayment_method: str):
+def generate_repayment_schedule(amount: Decimal, loan_term: int, interest_rate: Decimal, repayment_method: str):
     """
     生成还款计划
     :param amount: 贷款金额

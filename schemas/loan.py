@@ -11,14 +11,25 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 
+class LoanQuotaResponse(BaseModel):
+    """
+    贷款额度响应数据
+    """
+    max_amount: Decimal  # 可贷款额度
+    credit: Decimal  # 信用分数
+
+    class Config:
+        from_attributes = True
+
+
 class LoanApplicationRequest(BaseModel):
     """
     贷款申请请求数据
     """
     usage: str  # 借款用途
     loan_term: int  # 贷款期限（以月为单位）
-    amount: float  # 借款金额
-    repayment_method: str  # 还款方式(等额本金/等额本息)
+    amount: Decimal  # 借款金额
+    repayment_method: int  # 还款方式(等额本金/等额本息)
 
     class Config:
         from_attributes = True

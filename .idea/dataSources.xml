@@ -36,12 +36,5 @@
       <jdbc-url>jdbc:mysql://localhost:3307/finance</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="finance.db" uuid="d6f47de4-6d46-49cf-9a0c-1c4abe173e1f">
-      <driver-ref>sqlite.xerial</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/../sqlite-tools-win-x64-3460100/finance.db</jdbc-url>
-      <working-dir>$ProjectFileDir$</working-dir>
-    </data-source>
   </component>
 </project>
