@@ -1,0 +1,120 @@
+# -*- coding: utf-8 -*-
+"""
+# @Create on : 2024/11/18 下午10:45
+# @Author : Jason
+# @Des: 管理端 用户信息相关的schema模型
+"""
+
+from pydantic import BaseModel, Field
+from datetime import datetime, date
+from typing import Optional
+from decimal import Decimal
+
+class UserAuthResponse(BaseModel):
+    """
+    用户认证信息响应模型
+    """
+    id: str  # 唯一用户ID
+    username: str  # 用户名
+    phone_number: str  # 手机号
+    role: str  # 用户角色 (user/admin/root)
+    created_at: datetime  # 注册时间
+    updated_at: datetime  # 信息更新时间
+
+    class Config:
+        orm_mode = True  # 支持从 ORM 模型直接转换
+
+
+class UserAuthFilterRequest(BaseModel):
+    """
+    用户认证信息筛选请求模型
+    """
+    username: Optional[str]  # 按用户名筛选
+    phone_number: Optional[str]  # 按手机号筛选
+    role: Optional[str]  # 按角色筛选 (user/admin/root)
+    page: Optional[int] = 1  # 分页参数：页码，默认为第1页
+    limit: Optional[int] = 10  # 分页参数：每页的数量，默认为10
+
+class UpdateUserAuthRequest(BaseModel):
+    """
+    更新用户认证信息的请求模型
+    """
+    username: Optional[str]  # 修改用户名
+    phone_number: Optional[str]  # 修改手机号
+    role: Optional[str]  # 修改角色 (user/admin/root)
+
+class UserSignLogResponse(BaseModel):
+    """
+    用户登录日志响应模型
+    """
+    id: int  # 日志ID
+    user_id: str  # 用户ID
+    action: str  # 操作类型 (登录/登出)
+    ip_address: Optional[str]  # IP地址
+    user_agent: Optional[str]  # 用户设备信息
+    success: bool  # 操作是否成功
+    message: Optional[str]  # 操作结果信息
+    created_at: datetime  # 操作时间
+
+    class Config:
+        orm_mode = True  # 支持 ORM 转换
+
+class UserSignLogFilterRequest(BaseModel):
+    """
+    登录日志筛选请求模型
+    """
+    action: Optional[str]  # 操作类型（登录/登出）
+    ip_address: Optional[str]  # 按IP地址筛选
+    start_time: Optional[datetime]  # 按操作开始时间筛选
+    end_time: Optional[datetime]  # 按操作结束时间筛选
+
+class UserProfileResponse(BaseModel):
+    """
+    用户个人信息响应模型
+    """
+    username: str  # 用户名
+    full_name: Optional[str]  # 姓名
+    phone_number: str  # 电话号码
+    gender: Optional[str]  # 性别
+    id_card_number: Optional[str]  # 身份证号
+    bank_account: Optional[str]  # 银行卡号
+    address: Optional[str]  # 地址
+    date_of_birth: Optional[date]  # 出生日期
+    income: Optional[Decimal]  # 月收入
+    is_profile_completed: bool  # 是否完善个人信息
+
+    class Config:
+        orm_mode = True  # 支持 ORM 转换
+
+class UpdateUserProfileRequest(BaseModel):
+    """
+    更新用户个人信息的请求模型
+    """
+    full_name: Optional[str]
+    phone_number: Optional[str]
+    gender: Optional[str]
+    address: Optional[str]
+    date_of_birth: Optional[date]
+    income: Optional[Decimal]
+
+
+class CreateUserAuthRequest(BaseModel):
+    """
+    新增用户认证信息的请求模型
+    """
+    username: str = Field(..., description="用户名（必须唯一）")
+    phone_number: str = Field(..., description="手机号（必须唯一）")
+    password: str = Field(..., description="用户密码")
+    role: str = Field("user", description="用户角色（默认是 user，可选 admin/root）")
+
+class CreateUserProfileRequest(BaseModel):
+    """
+    新增用户个人信息的请求模型
+    """
+    user_id: str = Field(..., description="用户的唯一ID")
+    full_name: Optional[str] = Field(None, description="姓名")
+    phone_number: Optional[str] = Field(None, description="手机号")
+    gender: Optional[str] = Field(None, description="性别")
+    address: Optional[str] = Field(None, description="地址")
+    date_of_birth: Optional[date] = Field(None, description="出生日期")
+    income: Optional[Decimal] = Field(None, description="月收入")
