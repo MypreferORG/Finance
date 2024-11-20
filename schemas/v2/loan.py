@@ -8,7 +8,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 from pydantic import Field
 
 class LoanRecordResponse(BaseModel):
@@ -30,6 +30,22 @@ class LoanRecordResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class PaginatedLoanRecordData(BaseModel):
+    """
+    分页贷款记录数据
+    """
+    total: int  # 总记录数
+    pageNo: int  # 当前页码
+    pageSize: int  # 每页数量
+    records: List[LoanRecordResponse]  # 当前页的贷款记录列表
+
+class PaginatedLoanRecordResponse(BaseModel):
+    """
+    带分页信息的贷款记录响应数据
+    """
+    success: bool  # 请求是否成功
+    data: PaginatedLoanRecordData  # 分页的贷款记录数据
 
 class UpdateLoanRecordRequest(BaseModel):
     """

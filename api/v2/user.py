@@ -5,10 +5,13 @@
 # @Des: 用户管理接口
 """
 from fastapi import APIRouter, HTTPException, Query
+
+from core.Auth import get_password_hash
 from models.user import UserAuth, UserSignLog, UserProfile
 from schemas.v2.user import UserProfileResponse, UserSignLogFilterRequest, UserSignLogResponse, UserAuthResponse, \
     UserAuthFilterRequest, UpdateUserAuthRequest, UpdateUserProfileRequest, CreateUserAuthRequest, \
-    CreateUserProfileRequest
+    CreateUserProfileRequest, PaginatedUserResponse, PaginatedUserData, PaginatedSignLogResponse, PaginatedSignLogData, \
+    PaginatedUserProfileResponse, PaginatedUserProfileData
 from typing import List, Optional
 from pydantic import BaseModel
 router = APIRouter()
@@ -34,26 +37,25 @@ async def create_user_auth(request: CreateUserAuthRequest):
     new_user = await UserAuth.create(
         username=request.username,
         phone_number=request.phone_number,
-        hashed_password=request.password,  # 直接存储明文密码
+        hashed_password=get_password_hash(request.password),
         role=request.role,
     )
 
     return {"msg": "用户认证信息创建成功", "user_id": new_user.id}
 
-@router.get("/auth", summary="获取用户认证信息列表", response_model=List[UserAuthResponse])
+@router.get("/auth", summary="获取用户认证信息列表", response_model=PaginatedUserResponse)
 async def get_user_auth(
         username: str = Query(None, description="按用户名筛选"),
         phone_number: str = Query(None, description="按手机号筛选"),
         role: str = Query(None, description="按角色筛选 (user/admin/root)"),
-        page: int = Query(1, description="分页页码"),
-        limit: int = Query(10, description="分页大小"),
+        page: int = Query(1, description="分页页码", ge=1),
+        limit: int = Query(10, description="分页大小", ge=1),
 ):
     """
     获取所有用户的认证信息，支持筛选和分页
     """
+    # 动态构建查询条件
     query = UserAuth.all()
-
-    # 添加筛选条件
     if username:
         query = query.filter(username__icontains=username)
     if phone_number:
@@ -61,16 +63,30 @@ async def get_user_auth(
     if role:
         query = query.filter(role=role)
 
-    # 分页
+    # 获取符合条件的总记录数
     total = await query.count()
-    users = await query.offset((page - 1) * limit).limit(limit)
 
-    if not users:
-        raise HTTPException(status_code=404, detail="没有找到符合条件的用户信息")
+    # 分页获取当前页用户信息
+    skip = (page - 1) * limit
+    users = await query.offset(skip).limit(limit)
 
-    return users
+    # 将查询结果映射为响应模型
+    user_records = [UserAuthResponse.from_orm(user) for user in users]
 
-@router.get("/auth/{user_id}", summary="获取单个用户认证信息", response_model=UserAuthResponse)
+    # 返回分页数据
+    response_data = PaginatedUserResponse(
+        success=True,
+        data=PaginatedUserData(
+            total=total,
+            pageNo=page,
+            pageSize=limit,
+            records=user_records
+        )
+    )
+    return response_data
+
+
+@router.get("/auth/{user_id}", summary="获取单个用户认证信息", response_model=PaginatedUserResponse)
 async def get_user_auth_by_id(user_id: str):
     """
     根据用户ID获取用户的认证信息
@@ -80,7 +96,18 @@ async def get_user_auth_by_id(user_id: str):
     user = await UserAuth.get_or_none(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户未找到")
-    return user
+
+    # 包装成符合返回格式的数据
+    response_data = PaginatedUserResponse(
+        success=True,
+        data=PaginatedUserData(
+            total=1,
+            pageNo=1,
+            pageSize=1,
+            records=[UserAuthResponse.from_orm(user)]
+        )
+    )
+    return response_data
 
 @router.put("/auth/{user_id}", summary="修改用户认证信息")
 async def update_user_auth(user_id: str, request: UpdateUserAuthRequest):
@@ -173,11 +200,11 @@ async def delete_user_auth(user_id: str):
 
     return {"msg": "用户及其关联信息删除成功", "user_id": user_id}
 
-@router.get("/logs", summary="获取所有用户登录日志", response_model=List[UserSignLogResponse])
+@router.get("/logs", summary="获取所有用户登录日志", response_model=PaginatedSignLogResponse)
 async def get_user_logs(
-        user_id: Optional[str] = None,
-        page: int = Query(1, description="分页页码"),
-        limit: int = Query(10, description="分页大小")
+        user_id: Optional[str] = Query(None, description="按用户ID筛选"),
+        page: int = Query(1, description="分页页码", ge=1),
+        limit: int = Query(10, description="分页大小", ge=1)
 ):
     """
     获取所有用户登录日志
@@ -186,34 +213,74 @@ async def get_user_logs(
     :param limit: 每页大小
     :return: 登录日志列表
     """
+    # 构建查询条件
     query = UserSignLog.all()
-
-    # 筛选条件
     if user_id:
         query = query.filter(user__id=user_id)
 
-    # 分页
+    # 获取总记录数
     total = await query.count()
-    logs = await query.offset((page - 1) * limit).limit(limit)
 
+    # 获取分页数据
+    skip = (page - 1) * limit
+    logs = await query.offset(skip).limit(limit)
+
+    # 如果没有数据，返回 404
     if not logs:
         raise HTTPException(status_code=404, detail="没有找到符合条件的登录日志")
 
-    return logs
+    # 构建响应数据
+    log_records = [UserSignLogResponse.from_orm(log) for log in logs]
 
-@router.get("/logs/{user_id}", summary="获取指定用户的登录日志", response_model=List[UserSignLogResponse])
-async def get_user_logs_by_id(user_id: str):
+    response_data = PaginatedSignLogResponse(
+        success=True,
+        data=PaginatedSignLogData(
+            total=total,
+            pageNo=page,
+            pageSize=limit,
+            records=log_records
+        )
+    )
+    return response_data
+
+
+@router.get("/logs/{user_id}", summary="获取指定用户的登录日志", response_model=PaginatedSignLogResponse)
+async def get_user_logs_by_id(user_id: str, page: int = Query(1, description="分页页码", ge=1), limit: int = Query(10, description="分页大小", ge=1)):
     """
     获取指定用户的登录日志
     :param user_id: 用户ID
+    :param page: 分页页码
+    :param limit: 每页大小
     :return: 登录日志列表
     """
-    logs = await UserSignLog.filter(user__id=user_id).order_by("-created_at")
+    # 构建查询
+    query = UserSignLog.filter(user__id=user_id).order_by("-created_at")
 
+    # 获取总记录数
+    total = await query.count()
+
+    # 获取分页数据
+    skip = (page - 1) * limit
+    logs = await query.offset(skip).limit(limit)
+
+    # 如果没有数据，返回 404
     if not logs:
         raise HTTPException(status_code=404, detail="没有找到该用户的登录日志")
 
-    return logs
+    # 数据转换
+    log_records = [UserSignLogResponse.from_orm(log) for log in logs]
+
+    # 返回分页数据
+    response_data = PaginatedSignLogResponse(
+        success=True,
+        data=PaginatedSignLogData(
+            total=total,
+            pageNo=page,
+            pageSize=limit,
+            records=log_records
+        )
+    )
+    return response_data
 
 @router.delete("/logs/{log_id}", summary="删除指定登录日志")
 async def delete_user_log(log_id: int):
@@ -229,11 +296,11 @@ async def delete_user_log(log_id: int):
     await log.delete()
     return {"msg": "登录日志删除成功", "log_id": log_id}
 
-@router.post("/logs/filter", summary="按条件筛选登录日志", response_model=List[UserSignLogResponse])
+@router.post("/logs/filter", summary="按条件筛选登录日志", response_model=PaginatedSignLogResponse)
 async def filter_user_logs(
         filter: UserSignLogFilterRequest,
-        page: int = Query(1, description="分页页码"),
-        limit: int = Query(10, description="分页大小")
+        page: int = Query(1, description="分页页码", ge=1),
+        limit: int = Query(10, description="分页大小", ge=1)
 ):
     """
     按条件筛选登录日志
@@ -242,9 +309,8 @@ async def filter_user_logs(
     :param limit: 每页大小
     :return: 登录日志列表
     """
+    # 构建查询条件
     query = UserSignLog.all()
-
-    # 根据筛选条件添加过滤
     if filter.action:
         query = query.filter(action=filter.action)
     if filter.ip_address:
@@ -254,19 +320,36 @@ async def filter_user_logs(
     if filter.end_time:
         query = query.filter(created_at__lte=filter.end_time)
 
-    # 分页
+    # 获取总记录数
     total = await query.count()
-    logs = await query.offset((page - 1) * limit).limit(limit)
 
+    # 获取分页数据
+    skip = (page - 1) * limit
+    logs = await query.offset(skip).limit(limit)
+
+    # 如果没有数据，返回 404
     if not logs:
         raise HTTPException(status_code=404, detail="没有找到符合条件的登录日志")
 
-    return logs
+    # 转换数据为响应模型
+    log_records = [UserSignLogResponse.from_orm(log) for log in logs]
 
-@router.get("/profiles", summary="获取所有用户的个人信息", response_model=List[UserProfileResponse])
+    # 构建响应数据
+    response_data = PaginatedSignLogResponse(
+        success=True,
+        data=PaginatedSignLogData(
+            total=total,
+            pageNo=page,
+            pageSize=limit,
+            records=log_records
+        )
+    )
+    return response_data
+
+@router.get("/profiles", summary="获取所有用户的个人信息", response_model=PaginatedUserProfileResponse)
 async def get_all_user_profiles(
-        page: int = Query(1, description="分页页码"),
-        limit: int = Query(10, description="分页大小")
+        page: int = Query(1, description="分页页码", ge=1),
+        limit: int = Query(10, description="分页大小", ge=1)
 ):
     """
     获取所有用户的个人信息
@@ -274,30 +357,64 @@ async def get_all_user_profiles(
     :param limit: 每页大小
     :return: 用户个人信息列表
     """
+    # 查询所有用户的个人信息
     query = UserProfile.all()
 
-    # 分页
+    # 获取总记录数
     total = await query.count()
-    profiles = await query.offset((page - 1) * limit).limit(limit)
 
+    # 获取分页数据
+    skip = (page - 1) * limit
+    profiles = await query.offset(skip).limit(limit)
+
+    # 如果没有数据，返回 404
     if not profiles:
         raise HTTPException(status_code=404, detail="没有找到用户个人信息")
 
-    return profiles
+    # 转换数据为响应模型
+    profile_records = [UserProfileResponse.from_orm(profile) for profile in profiles]
 
-@router.get("/profiles/{user_id}", summary="获取指定用户的个人信息", response_model=UserProfileResponse)
+    # 构建响应数据
+    response_data = PaginatedUserProfileResponse(
+        success=True,
+        data=PaginatedUserProfileData(
+            total=total,
+            pageNo=page,
+            pageSize=limit,
+            records=profile_records
+        )
+    )
+    return response_data
+
+@router.get("/profiles/{user_id}", summary="获取指定用户的个人信息", response_model=PaginatedUserProfileResponse)
 async def get_user_profile_by_id(user_id: str):
     """
     获取指定用户的个人信息
     :param user_id: 用户ID
     :return: 用户个人信息
     """
+    # 查询指定用户的个人信息
     profile = await UserProfile.get_or_none(user__id=user_id)
 
+    # 如果没有找到，返回 404
     if not profile:
         raise HTTPException(status_code=404, detail="用户个人信息未找到")
 
-    return profile
+    # 转换为响应模型
+    profile_record = UserProfileResponse.from_orm(profile)
+
+    # 返回分页格式数据（单个记录）
+    response_data = PaginatedUserProfileResponse(
+        success=True,
+        data=PaginatedUserProfileData(
+            total=1,
+            pageNo=1,
+            pageSize=1,
+            records=[profile_record]
+        )
+    )
+    return response_data
+
 
 @router.put("/profiles/{user_id}", summary="修改用户个人信息")
 async def update_user_profile(user_id: str, request: UpdateUserProfileRequest):
@@ -319,6 +436,7 @@ async def update_user_profile(user_id: str, request: UpdateUserProfileRequest):
     await profile.save()
 
     return {"msg": "用户个人信息修改成功", "user_id": user_id}
+
 
 @router.put("/profiles/{user_id}/complete", summary="标记用户为已完善个人信息")
 async def mark_profile_as_completed(user_id: str):

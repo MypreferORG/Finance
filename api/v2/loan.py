@@ -8,17 +8,18 @@
 from fastapi import APIRouter, Query, HTTPException
 from typing import List, Optional
 from models import LoanRecord, UserAuth, RepaymentRecord
-from schemas.v2.loan import LoanRecordResponse, UpdateLoanRecordRequest, CreateLoanRecordRequest
+from schemas.v2.loan import LoanRecordResponse, UpdateLoanRecordRequest, CreateLoanRecordRequest, \
+    PaginatedLoanRecordResponse, PaginatedLoanRecordData
 
 router = APIRouter()
 
 
-@router.get("/records", summary="获取所有贷款记录", response_model=List[LoanRecordResponse])
+@router.get("/records", summary="获取所有贷款记录", response_model=PaginatedLoanRecordResponse)
 async def get_all_loan_records(
         user_id: Optional[str] = Query(None, description="按用户ID筛选"),
         status: Optional[str] = Query(None, description="按贷款状态筛选"),
-        page: int = Query(1, description="分页页码"),
-        limit: int = Query(10, description="分页大小")
+        page: int = Query(1, description="分页页码", ge=1),
+        limit: int = Query(10, description="分页大小", ge=1)
 ):
     """
     获取所有贷款记录
@@ -28,36 +29,69 @@ async def get_all_loan_records(
     :param limit: 每页大小
     :return: 贷款记录列表
     """
+    # 构建查询
     query = LoanRecord.all()
-
-    # 添加筛选条件
     if user_id:
         query = query.filter(user__id=user_id)
     if status:
         query = query.filter(status=status)
 
-    # 分页
+    # 获取总记录数
     total = await query.count()
-    records = await query.offset((page - 1) * limit).limit(limit)
 
+    # 获取分页数据
+    skip = (page - 1) * limit
+    records = await query.offset(skip).limit(limit)
+
+    # 如果没有符合条件的记录，返回 404
     if not records:
         raise HTTPException(status_code=404, detail="没有找到符合条件的贷款记录")
 
-    return records
+    # 转换数据为响应模型
+    record_list = [LoanRecordResponse.from_orm(record) for record in records]
 
-@router.get("/records/{loan_id}", summary="获取单个贷款记录详情", response_model=LoanRecordResponse)
+    # 构建响应数据
+    response_data = PaginatedLoanRecordResponse(
+        success=True,
+        data=PaginatedLoanRecordData(
+            total=total,
+            pageNo=page,
+            pageSize=limit,
+            records=record_list
+        )
+    )
+    return response_data
+
+
+@router.get("/records/{loan_id}", summary="获取单个贷款记录详情", response_model=PaginatedLoanRecordResponse)
 async def get_loan_record_by_id(loan_id: int):
     """
     获取单个贷款记录详情
     :param loan_id: 贷款记录ID
     :return: 贷款记录详细信息
     """
+    # 查询单个贷款记录
     loan_record = await LoanRecord.get_or_none(id=loan_id)
 
+    # 如果记录未找到，返回 404
     if not loan_record:
         raise HTTPException(status_code=404, detail="贷款记录未找到")
 
-    return loan_record
+    # 转换为响应模型
+    record = LoanRecordResponse.from_orm(loan_record)
+
+    # 返回分页格式的响应
+    response_data = PaginatedLoanRecordResponse(
+        success=True,
+        data=PaginatedLoanRecordData(
+            total=1,
+            pageNo=1,
+            pageSize=1,
+            records=[record]
+        )
+    )
+    return response_data
+
 
 @router.put("/records/{loan_id}", summary="修改贷款记录")
 async def update_loan_record(loan_id: int, request: UpdateLoanRecordRequest):

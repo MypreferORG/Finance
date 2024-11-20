@@ -7,7 +7,7 @@
 
 from pydantic import BaseModel, Field
 from datetime import datetime, date
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 
 class UserAuthResponse(BaseModel):
@@ -22,7 +22,30 @@ class UserAuthResponse(BaseModel):
     updated_at: datetime  # 信息更新时间
 
     class Config:
-        orm_mode = True  # 支持从 ORM 模型直接转换
+        from_attributes = True
+
+class PaginatedUserData(BaseModel):
+    """
+    分页用户数据
+    """
+    total: int  # 总用户数
+    pageNo: int  # 当前页码
+    pageSize: int  # 每页数量
+    records: List[UserAuthResponse]  # 当前页的用户认证信息列表
+
+    class Config:
+        from_attributes = True
+
+
+class PaginatedUserResponse(BaseModel):
+    """
+    带分页信息的用户认证响应数据
+    """
+    success: bool  # 请求是否成功
+    data: PaginatedUserData  # 分页的用户数据
+
+    class Config:
+        from_attributes = True
 
 
 class UserAuthFilterRequest(BaseModel):
@@ -35,6 +58,10 @@ class UserAuthFilterRequest(BaseModel):
     page: Optional[int] = 1  # 分页参数：页码，默认为第1页
     limit: Optional[int] = 10  # 分页参数：每页的数量，默认为10
 
+    class Config:
+        from_attributes = True
+
+
 class UpdateUserAuthRequest(BaseModel):
     """
     更新用户认证信息的请求模型
@@ -42,6 +69,10 @@ class UpdateUserAuthRequest(BaseModel):
     username: Optional[str]  # 修改用户名
     phone_number: Optional[str]  # 修改手机号
     role: Optional[str]  # 修改角色 (user/admin/root)
+
+    class Config:
+        from_attributes = True
+
 
 class UserSignLogResponse(BaseModel):
     """
@@ -57,7 +88,32 @@ class UserSignLogResponse(BaseModel):
     created_at: datetime  # 操作时间
 
     class Config:
-        orm_mode = True  # 支持 ORM 转换
+        from_attributes = True
+
+
+class PaginatedSignLogData(BaseModel):
+    """
+    分页用户登录日志数据
+    """
+    total: int  # 总记录数
+    pageNo: int  # 当前页码
+    pageSize: int  # 每页数量
+    records: List[UserSignLogResponse]  # 当前页的用户登录日志列表
+
+    class Config:
+        from_attributes = True
+
+
+class PaginatedSignLogResponse(BaseModel):
+    """
+    带分页信息的用户登录日志响应数据
+    """
+    success: bool  # 请求是否成功
+    data: PaginatedSignLogData  # 分页的登录日志数据
+
+    class Config:
+        from_attributes = True
+
 
 class UserSignLogFilterRequest(BaseModel):
     """
@@ -67,6 +123,10 @@ class UserSignLogFilterRequest(BaseModel):
     ip_address: Optional[str]  # 按IP地址筛选
     start_time: Optional[datetime]  # 按操作开始时间筛选
     end_time: Optional[datetime]  # 按操作结束时间筛选
+
+    class Config:
+        from_attributes = True
+
 
 class UserProfileResponse(BaseModel):
     """
@@ -84,7 +144,32 @@ class UserProfileResponse(BaseModel):
     is_profile_completed: bool  # 是否完善个人信息
 
     class Config:
-        orm_mode = True  # 支持 ORM 转换
+        from_attributes = True
+
+
+class PaginatedUserProfileData(BaseModel):
+    """
+    分页用户个人信息数据
+    """
+    total: int  # 总记录数
+    pageNo: int  # 当前页码
+    pageSize: int  # 每页数量
+    records: List[UserProfileResponse]  # 当前页的用户个人信息列表
+
+    class Config:
+        from_attributes = True
+
+
+class PaginatedUserProfileResponse(BaseModel):
+    """
+    带分页信息的用户个人信息响应数据
+    """
+    success: bool  # 请求是否成功
+    data: PaginatedUserProfileData  # 分页的用户个人信息数据
+
+    class Config:
+        from_attributes = True
+
 
 class UpdateUserProfileRequest(BaseModel):
     """
@@ -97,6 +182,8 @@ class UpdateUserProfileRequest(BaseModel):
     date_of_birth: Optional[date]
     income: Optional[Decimal]
 
+    class Config:
+        from_attributes = True
 
 class CreateUserAuthRequest(BaseModel):
     """
@@ -106,6 +193,9 @@ class CreateUserAuthRequest(BaseModel):
     phone_number: str = Field(..., description="手机号（必须唯一）")
     password: str = Field(..., description="用户密码")
     role: str = Field("user", description="用户角色（默认是 user，可选 admin/root）")
+
+    class Config:
+        from_attributes = True
 
 class CreateUserProfileRequest(BaseModel):
     """
@@ -118,3 +208,6 @@ class CreateUserProfileRequest(BaseModel):
     address: Optional[str] = Field(None, description="地址")
     date_of_birth: Optional[date] = Field(None, description="出生日期")
     income: Optional[Decimal] = Field(None, description="月收入")
+
+    class Config:
+        from_attributes = True
