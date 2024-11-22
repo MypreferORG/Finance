@@ -8,7 +8,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from models import UserAuth, UserProfile
 from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
-from core.dependences import get_current_user
+from core.dependences import user_required
 from schemas.user import BindBankAccountRequest
 from utils.id_card import is_valid_id_card
 
@@ -16,15 +16,13 @@ router = APIRouter()
 
 
 @router.get("/profile", summary="查看个人信息", response_model=UserProfileResponse)
-async def get_profile(user: UserAuth = Depends(get_current_user)):
+async def get_profile(user: UserAuth = Depends(user_required)):
     """
     查看个人信息逻辑
     :param user: UserAuth
     :return: user_profile: UserProfileResponse
     """
-    if not user:
-        raise HTTPException(status_code=404, detail="用户未找到")
-
+    # 查询用户个人信息
     user_profile = await UserProfile.get_or_none(user=user)
 
     if not user_profile:
@@ -34,7 +32,7 @@ async def get_profile(user: UserAuth = Depends(get_current_user)):
 
 
 @router.post("/profile/update", summary="编辑个人信息", response_model=UserProfileResponse)
-async def update_profile(request: UpdateProfileRequest, user: UserAuth = Depends(get_current_user)):
+async def update_profile(request: UpdateProfileRequest, user: UserAuth = Depends(user_required)):
     """
     更新用户个人信息
     :param request:
@@ -65,7 +63,7 @@ async def update_profile(request: UpdateProfileRequest, user: UserAuth = Depends
 
 
 @router.post("/bind/identity", summary="实名认证")
-async def bind_identity(request: VerifyIdentityRequest, user: UserAuth = Depends(get_current_user)):
+async def bind_identity(request: VerifyIdentityRequest, user: UserAuth = Depends(user_required)):
     """
     实名认证逻辑
     :param request:
@@ -111,7 +109,7 @@ async def bind_identity(request: VerifyIdentityRequest, user: UserAuth = Depends
 
 
 @router.post("/bind/academic", summary="学信网认证")
-async def bind_academic(request: VerifyAcademicRequest, user: UserAuth = Depends(get_current_user)):
+async def bind_academic(request: VerifyAcademicRequest, user: UserAuth = Depends(user_required)):
     """
     学信网认证逻辑
     :param request:
@@ -124,7 +122,7 @@ async def bind_academic(request: VerifyAcademicRequest, user: UserAuth = Depends
         raise HTTPException(status_code=404, detail="用户未找到")
 
     # 检查是否已完成学信网认证
-    if user_profile.academic_verified:
+    if user_profile.student_verified:
         raise HTTPException(status_code=400, detail="用户已完成学信网认证")
 
     # 检查是否已完成实名认证
@@ -155,7 +153,7 @@ async def bind_academic(request: VerifyAcademicRequest, user: UserAuth = Depends
     # if not report_verified:
     #     raise HTTPException(status_code=400, detail="学信网认证报告验证失败")
 
-    user_profile.academic_verified = True
+    user_profile.student_verified = True
     await user_profile.save()
 
     # 检查个人信息是否完整
@@ -168,7 +166,7 @@ async def bind_academic(request: VerifyAcademicRequest, user: UserAuth = Depends
 
 
 @router.post("/bind/bank-account", summary="绑定银行卡")
-async def bind_bankcard(request: BindBankAccountRequest, user: UserAuth = Depends(get_current_user)):
+async def bind_bankcard(request: BindBankAccountRequest, user: UserAuth = Depends(user_required)):
     """
     银行卡绑定逻辑
     :param request:

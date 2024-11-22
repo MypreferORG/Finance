@@ -5,33 +5,23 @@
 # @Des: 
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, status, Query
-from core.dependences import get_current_user
-from models import Article, UserAuth
-from schemas import CreateArticleRequest, ArticleResponse, ArticleAbstractResponse
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Query, Depends
+from core.dependences import admin_required
+from models import Article
+from schemas import CreateArticleRequest
 from schemas.article import PaginatedArticleResponse, PaginatedArticleData, UpdateArticleRequest
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(admin_required)])
 
 
 @router.post("/publish", summary="发布文章")
-async def publish_article(
-        article: CreateArticleRequest,
-        user: UserAuth = Depends(get_current_user)):
+async def publish_article(article: CreateArticleRequest):
     """
     文章发布逻辑
-    :param user: 当前用户
     :param article: 文章详细信息
-    :return
+    :return article_id: 文章id
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
-
     # 创建新文章记录
     new_article = await Article.create(
         title=article.title,
@@ -48,22 +38,12 @@ async def publish_article(
 
 
 @router.delete("/delete/{article_id}", summary="删除文章")
-async def delete_article(
-        article_id: int,
-        user: UserAuth = Depends(get_current_user)):
+async def delete_article(article_id: int):
     """
     删除文章逻辑
-    :param user: 当前用户
-    :param article_id: 文章详细信息
-    :return
+    :param article_id: 文章ID
+    :return article_id: 文章id
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
-
     article = await Article.get_or_none(id=article_id)
 
     # 如果文章不存在，返回404错误
@@ -83,24 +63,16 @@ async def list_articles(
     title: Optional[str] = Query(None, alias="title"),
     status: Optional[str] = Query(None, alias="status"),
     author: Optional[str] = Query(None, alias="author"),
-    user: UserAuth = Depends(get_current_user)
 ):
     """
     获取文章列表逻辑
-    :param user:
-    :param pageNo:
-    :param pageSize:
-    :param title:
-    :param status:
-    :param author:
-    :return:
+    :param pageNo: 页码
+    :param pageSize: 每页数量
+    :param title: 标题
+    :param status: 状态
+    :param author: 作者
+    :return: articles: 文章摘要列表
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
     # 计算要跳过的记录数量
     skip = (pageNo - 1) * pageSize
 
@@ -135,21 +107,13 @@ async def list_articles(
 @router.post("/update/{article_id}", summary="更新文章")
 async def update_article(
         article_id: int,
-        article: UpdateArticleRequest,
-        user: UserAuth = Depends(get_current_user)):
+        article: UpdateArticleRequest):
     """
     更新文章逻辑
-    :param article_id:
-    :param article:
-    :param user:
-    :return:
+    :param article_id: 文章ID
+    :param article: 文章详细信息
+    :return: article_id: 文章id
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
     # 根据公告ID获取公告
     existing_article = await Article.get_or_none(id=article_id)
 

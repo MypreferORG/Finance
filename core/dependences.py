@@ -40,3 +40,38 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
 
     return user
+
+
+# 验证Token并检查权限
+async def check_permissions(token: str = Depends(oauth2_scheme), scope=Depends()):
+    current_user = await get_current_user(token)
+    if scope:
+        scope_levels = {
+            "root": 2,
+            "admin": 1,
+            "user": 0
+        }
+        scope_level = scope_levels.get(scope)
+        user_scope_level = scope_levels.get(current_user.role)
+        if user_scope_level < scope_level:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="权限不足",
+            )
+
+    return current_user
+
+
+# 检查用户是否为管理员
+async def admin_required(token: str = Depends(oauth2_scheme)):
+    return await check_permissions(token, "admin")
+
+
+# 检查用户是否为超级管理员
+async def root_required(token: str = Depends(oauth2_scheme)):
+    return await check_permissions(token, "root")
+
+
+# 检查用户是否为普通用户
+async def user_required(token: str = Depends(oauth2_scheme)):
+    return await check_permissions(token, "user")

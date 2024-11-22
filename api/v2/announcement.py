@@ -5,39 +5,28 @@
 # @Des: 
 """
 
-from typing import List, Optional
-from core.dependences import get_current_user
-from fastapi import APIRouter, HTTPException, Depends, status, Query
-from models import Announcement, UserAuth
-from schemas import (CreateAnnouncementRequest,
-                     AnnouncementResponse,
-                     UpdateAnnouncementRequest,
-                     AnnouncementAbstractResponse)
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Query, Depends
+from core.dependences import admin_required
+from models import Announcement
+from schemas import (CreateAnnouncementRequest)
 from schemas.article import PaginatedAnnouncementResponse, PaginatedAnnouncementData
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(admin_required)])
+
 
 @router.post("/publish", summary="发布公告")
-async def publish_announcement(
-        announcement: CreateAnnouncementRequest,
-        user: UserAuth = Depends(get_current_user)):
+async def publish_announcement(announcement: CreateAnnouncementRequest):
     """
     发布公告逻辑
-    :param user: 当前用户
     :param announcement: 公告详细信息
+    :return announcement_id: 公告id
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
-
     # 创建公告
     new_announcement = await Announcement.create(
         title=announcement.title,
         content=announcement.content,
-        author=user.username if not announcement.author else announcement.author,
+        author=announcement.author,
         expiration_date=announcement.expiration_date,
         status="active",  # 默认状态为 active
     )
@@ -94,21 +83,14 @@ async def list_announcements(
 @router.post("/update/{announcement_id}", summary="更新公告")
 async def update_announcement(
         announcement_id: int,
-        announcement: CreateAnnouncementRequest,
-        user: UserAuth = Depends(get_current_user)):
+        announcement: CreateAnnouncementRequest
+):
     """
     更新公告逻辑
-    :param announcement_id:
-    :param user: 当前用户
+    :param announcement_id: 公告id
     :param announcement: 公告详细信息
     :retur
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
     # 根据公告ID获取公告
     existing_announcement = await Announcement.get_or_none(id=announcement_id)
 
@@ -135,22 +117,12 @@ async def update_announcement(
 
 
 @router.delete("/delete/{announcement_id}", summary="删除公告")
-async def delete_announcement(
-        announcement_id: int,
-        user: UserAuth = Depends(get_current_user)):
+async def delete_announcement(announcement_id: int):
     """
     删除公告逻辑
-    :param user: 当前用户
     :param announcement_id: 公告id
     :return
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
-
     # 根据ID获取公告
     existing_announcement = await Announcement.get_or_none(id=announcement_id)
 

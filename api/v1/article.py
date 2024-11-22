@@ -6,73 +6,11 @@
 """
 
 from typing import List
-from fastapi import APIRouter, HTTPException, Depends, status
-from core.dependences import get_current_user
-from models import Article, UserAuth
-from schemas import CreateArticleRequest, ArticleResponse, ArticleAbstractResponse
+from fastapi import APIRouter, HTTPException
+from models import Article
+from schemas import ArticleResponse, ArticleAbstractResponse
 
 router = APIRouter()
-
-
-@router.post("/publish", summary="发布文章")
-async def publish_article(
-        article: CreateArticleRequest,
-        user: UserAuth = Depends(get_current_user)):
-    """
-    文章发布逻辑
-    :param user: 当前用户
-    :param article: 文章详细信息
-    :return
-    """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
-
-    # 创建新文章记录
-    new_article = await Article.create(
-        title=article.title,
-        content=article.content,
-        author=article.author,
-        cover_image=article.cover_image,
-        summary=article.summary
-    )
-
-    return {
-        "msg": "文章发布成功",
-        "id": new_article.id
-    }
-
-
-@router.delete("/delete/{article_id}", summary="删除文章")
-async def delete_article(
-        article_id: int,
-        user: UserAuth = Depends(get_current_user)):
-    """
-    删除文章逻辑
-    :param user: 当前用户
-    :param article_id: 文章详细信息
-    :return
-    """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
-
-    article = await Article.get_or_none(id=article_id)
-
-    # 如果文章不存在，返回404错误
-    if not article:
-        raise HTTPException(status_code=404, detail="文章未找到")
-
-    # 删除文章
-    await article.delete()
-
-    return {"msg": "文章删除成功", "article_id": article_id}
 
 
 @router.get("/list", summary="查询文章列表", response_model=List[ArticleAbstractResponse])

@@ -4,14 +4,12 @@
 # @Author : Myprefer
 # @Des: JWT鉴权
 """
-from fastapi import HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer
+from datetime import datetime, timedelta
+from typing import Optional
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from config import settings
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
-from typing import Optional
 
 # 配置密码加密算法
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -25,7 +25,7 @@ class UserProfileResponse(BaseModel):
     profession: Optional[str]  # 职业类别
     address: Optional[str]  # 住址
     date_of_birth: Optional[date]  # 出生年月
-    academic_verified: bool  # 学信网认证
+    student_verified: bool  # 学信网认证
     bank_account: Optional[str]  # 银行卡号
     profile_picture: Optional[str]  # 头像URL
     income: Optional[Decimal]  # 月收入
