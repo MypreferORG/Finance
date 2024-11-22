@@ -19,8 +19,8 @@ router = APIRouter(dependencies=[Depends(admin_required)])
 async def publish_announcement(announcement: CreateAnnouncementRequest):
     """
     发布公告逻辑
-    :param user: 当前用户
     :param announcement: 公告详细信息
+    :return announcement_id: 公告id
     """
     # 创建公告
     new_announcement = await Announcement.create(
@@ -87,8 +87,7 @@ async def update_announcement(
 ):
     """
     更新公告逻辑
-    :param announcement_id:
-    :param user: 当前用户
+    :param announcement_id: 公告id
     :param announcement: 公告详细信息
     :retur
     """
@@ -121,7 +120,6 @@ async def update_announcement(
 async def delete_announcement(announcement_id: int):
     """
     删除公告逻辑
-    :param user: 当前用户
     :param announcement_id: 公告id
     :return
     """

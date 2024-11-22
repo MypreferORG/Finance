@@ -19,9 +19,8 @@ router = APIRouter(dependencies=[Depends(admin_required)])
 async def publish_article(article: CreateArticleRequest):
     """
     文章发布逻辑
-    :param user: 当前用户
     :param article: 文章详细信息
-    :return
+    :return article_id: 文章id
     """
     # 创建新文章记录
     new_article = await Article.create(
@@ -42,8 +41,8 @@ async def publish_article(article: CreateArticleRequest):
 async def delete_article(article_id: int):
     """
     删除文章逻辑
-    :param article_id: 文章详细信息
-    :return
+    :param article_id: 文章ID
+    :return article_id: 文章id
     """
     article = await Article.get_or_none(id=article_id)
 
@@ -67,12 +66,12 @@ async def list_articles(
 ):
     """
     获取文章列表逻辑
-    :param pageNo:
-    :param pageSize:
-    :param title:
-    :param status:
-    :param author:
-    :return:
+    :param pageNo: 页码
+    :param pageSize: 每页数量
+    :param title: 标题
+    :param status: 状态
+    :param author: 作者
+    :return: articles: 文章摘要列表
     """
     # 计算要跳过的记录数量
     skip = (pageNo - 1) * pageSize
@@ -111,9 +110,9 @@ async def update_article(
         article: UpdateArticleRequest):
     """
     更新文章逻辑
-    :param article_id:
-    :param article:
-    :return:
+    :param article_id: 文章ID
+    :param article: 文章详细信息
+    :return: article_id: 文章id
     """
     # 根据公告ID获取公告
     existing_article = await Article.get_or_none(id=article_id)

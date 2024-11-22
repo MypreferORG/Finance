@@ -6,10 +6,9 @@
 """
 
 from typing import List
-from fastapi import APIRouter, HTTPException, Depends, status
-from core.dependences import get_current_user
-from models import Article, UserAuth
-from schemas import CreateArticleRequest, ArticleResponse, ArticleAbstractResponse
+from fastapi import APIRouter, HTTPException
+from models import Article
+from schemas import ArticleResponse, ArticleAbstractResponse
 
 router = APIRouter()
 
