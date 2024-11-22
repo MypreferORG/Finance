@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 # @Create on : 10/7/24 8:22 PM
@@ -48,7 +49,7 @@ DB_ORM_CONFIG = {
         # "finance": {
         #     'engine': 'tortoise.backends.sqlite',
         #     'credentials': {
-        #         'file_path': 'D:\\ML\\finance\\sqlite-tools-win-x64-3460100\\finance.db',  # SQLite 数据库文件路径
+        #         'file_path': '/root/Databases/finance/finance.db',  # SQLite 数据库文件路径
         #     }
         # },
     },
