@@ -8,11 +8,8 @@ import decimal
 import json
 from decimal import Decimal
 from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, status
-
-from config import settings
-from core.dependences import get_current_user
+from fastapi import APIRouter, Depends, HTTPException
+from core.dependences import get_current_user, admin_required, user_required
 from models import UserAuth, UserProfile, LoanRecord, InterestRate, RepaymentRecord
 from schemas import (LoanApplicationResponse,
                      LoanApplicationRequest,
@@ -28,7 +25,7 @@ router = APIRouter()
 
 
 @router.get("/apply/check", summary="检查贷款额度", response_model=LoanQuotaResponse)
-async def check_loan_quota(user: UserAuth = Depends(get_current_user)):
+async def check_loan_quota(user: UserAuth = Depends(user_required)):
     """
     检查贷款额度逻辑
     :param user: 当前登录用户
@@ -50,7 +47,7 @@ async def check_loan_quota(user: UserAuth = Depends(get_current_user)):
 
 
 @router.post("/apply/confirm", summary="申请贷款", response_model=LoanApplicationResponse)
-async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(get_current_user)):
+async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(user_required)):
     """
     贷款申请逻辑
     :param request: 贷款申请请求
@@ -104,7 +101,7 @@ async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(g
 
 
 @router.get("/status/{loan_id}", summary="查询贷款状态", response_model=LoanStatusResponse)
-async def loan_status(loan_id: int, user: UserAuth = Depends(get_current_user)):
+async def loan_status(loan_id: int, user: UserAuth = Depends(user_required)):
     """
     查询贷款状态逻辑
     :param loan_id: 贷款记录id
@@ -125,7 +122,7 @@ async def loan_status(loan_id: int, user: UserAuth = Depends(get_current_user)):
 
 
 @router.get("/repayment-plan/{loan_id}", summary="还款计划", response_model=RepaymentPlanResponse)
-async def repayment_plan(loan_id: int, user: UserAuth = Depends(get_current_user)):
+async def repayment_plan(loan_id: int, user: UserAuth = Depends(user_required)):
     """
     查看还款计划逻辑
     :param loan_id: 贷款记录id
@@ -178,7 +175,7 @@ async def repayment_plan(loan_id: int, user: UserAuth = Depends(get_current_user
 
 
 @router.post("/repayment", summary="还款", response_model=RepaymentRequest)
-async def repayment(request: RepaymentRequest, user: UserAuth = Depends(get_current_user)):
+async def repayment(request: RepaymentRequest, user: UserAuth = Depends(user_required)):
     """
     还款逻辑
     :param request: 还款请求
@@ -241,20 +238,13 @@ async def repayment(request: RepaymentRequest, user: UserAuth = Depends(get_curr
 
 
 @router.get("/set-rate/{rate}", summary="设置贷款利率")
-async def set_rate(rate: decimal.Decimal, user: UserAuth = Depends(get_current_user)):
+async def set_rate(rate: decimal.Decimal, user: UserAuth = Depends(admin_required)):
     """
     设置贷款利率
     :param rate: 利率
     :param user: 当前登录用户
     :return: 设置结果
     """
-    # 验证用户角色是否为 admin
-    if user.role != "admin" and user.role != "root":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足"
-        )
-
     await InterestRate.update_or_create(interest_rate=rate)
 
     return {
@@ -264,7 +254,7 @@ async def set_rate(rate: decimal.Decimal, user: UserAuth = Depends(get_current_u
 
 
 @router.get("/quota", summary="查询借款额度")
-async def get_loan_quota(user: UserAuth = Depends(get_current_user)):
+async def get_loan_quota(user: UserAuth = Depends(user_required)):
     """
     查询借款额度逻辑
     :param user: 当前登录用户
@@ -280,7 +270,7 @@ async def get_loan_quota(user: UserAuth = Depends(get_current_user)):
 @router.get("/list/{status}",
             summary="查询不同状态的借款列表",
             response_model=List[LoanStatusResponse])
-async def loan_status(status: str, user: UserAuth = Depends(get_current_user)):
+async def loan_status(status: str, user: UserAuth = Depends(user_required)):
     """
     查询借款列表状态逻辑
     :param status: 贷款状态
