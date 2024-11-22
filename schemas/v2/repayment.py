@@ -5,7 +5,7 @@
 # @Des: 
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
@@ -17,7 +17,7 @@ class RepaymentRecordResponse(BaseModel):
     """
     id: int
     loan_id: int
-    user_id: str
+    user_id: int
     amount: Decimal
     repayment_date: datetime
     status: str
@@ -61,6 +61,7 @@ class UpdateRepaymentRecordRequest(BaseModel):
     amount: Optional[Decimal] = Field(None, description="还款金额")
     status: Optional[str] = Field(None, description="还款状态（如：successful、failed、overdue等）")
     message: Optional[str] = Field(None, description="备注信息")
+    repayment_date: Optional[datetime] = Field(None, description="还款日期")
 
     class Config:
         orm_mode = True
@@ -71,11 +72,14 @@ class CreateRepaymentRecordRequest(BaseModel):
     """
     新增还款记录的请求模型
     """
+    id: int = Field(..., description="还款ID")
     loan_id: int = Field(..., description="关联的贷款ID")
-    user_id: str = Field(..., description="用户的唯一ID")
+    user_id: int = Field(..., description="用户的唯一ID")
     amount: Decimal = Field(..., description="还款金额")
+    repayment_date: datetime = Field(..., description="还款日期")
     status: str = Field(..., description="还款状态（如：successful、failed、overdue等）")
     message: Optional[str] = Field(None, description="备注信息")
+
 
     class Config:
         orm_mode = True

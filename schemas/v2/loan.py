@@ -15,23 +15,22 @@ class LoanRecordResponse(BaseModel):
     """
     贷款记录响应模型
     """
-    id: int
-    user_id: str
-    amount: Decimal
-    interest_rate: Decimal
-    loan_term: int
-    status: str
-    repayment_method: str
-    repayment_amount: Decimal
-    usage: str
-    bank_account: str
-    created_at: datetime
-    updated_at: datetime
+    id: int  # 贷款记录ID
+    user_id: int  # 用户ID
+    amount: Decimal  # 贷款金额
+    interest_rate: Decimal  # 年利率
+    loan_term: int  # 贷款期限（以月为单位）
+    status: str  # 贷款状态
+    repayment_method: str  # 还款方式
+    repayment_amount: Decimal  # 已还款金额
+    usage: str  # 贷款用途
+    bank_account: str  # 收款/还款银行账户
+    created_at: datetime  # 贷款申请时间
+    updated_at: datetime  # 贷款信息更新时间
 
     class Config:
-        orm_mode = True
-        from_attributes = True
-
+        orm_mode = True  # ORM支持
+        from_attributes = True  # 支持从属性生成模型数据
 
 class PaginatedLoanRecordData(BaseModel):
     """
@@ -63,29 +62,32 @@ class UpdateLoanRecordRequest(BaseModel):
     """
     修改贷款记录的请求模型
     """
-    amount: Optional[Decimal] = Field(None, description="借款金额")
-    status: Optional[str] = Field(None, description="贷款状态（如：active、completed、defaulted、overdue等）")
-    repayment_method: Optional[str] = Field(None, description="还款方式(等额本金/等额本息)")
-    repayment_amount: Optional[Decimal] = Field(None, description="已还款金额")
-    usage: Optional[str] = Field(None, description="借款用途")
-    bank_account: Optional[str] = Field(None, description="收款/还款银行账户")
+    amount: Optional[Decimal] = Field(None, description="借款金额")  # 可选，更新借款金额
+    status: Optional[str] = Field(None, description="贷款状态（如：active、completed、defaulted、overdue等）")  # 可选，更新贷款状态
+    repayment_method: Optional[str] = Field(None, description="还款方式(等额本金/等额本息)")  # 可选，更新还款方式
+    repayment_amount: Optional[Decimal] = Field(None, description="已还款金额")  # 可选，更新已还款金额
+    usage: Optional[str] = Field(None, description="借款用途")  # 可选，更新借款用途
+    bank_account: Optional[str] = Field(None, description="收款/还款银行账户")  # 可选，更新收款或还款银行账户
 
     class Config:
-        orm_mode = True
-        from_attributes = True
+        orm_mode = True  # ORM支持
+        from_attributes = True  # 支持从属性生成模型数据
 
 
 class CreateLoanRecordRequest(BaseModel):
     """
     新增贷款记录的请求模型
     """
-    user_id: str = Field(..., description="用户的唯一ID")
-    amount: Decimal = Field(..., description="借款金额")
-    interest_rate: Decimal = Field(..., description="年利率")
-    loan_term: int = Field(..., description="贷款期限（以月为单位）")
-    repayment_method: str = Field(..., description="还款方式(等额本金/等额本息)")
-    usage: str = Field(..., description="借款用途")
-    bank_account: str = Field(..., description="收款银行账户")
+    id: int = Field(..., description="贷款ID") # 贷款ID
+    user_id: int = Field(..., description="用户ID")  # 用户ID
+    amount: Decimal = Field(..., description="借款金额")  # 借款金额
+    interest_rate: Decimal = Field(..., description="年利率")  # 年利率
+    loan_term: int = Field(..., description="贷款期限（以月为单位）")  # 贷款期限
+    repayment_method: str = Field(..., description="还款方式(等额本金/等额本息)")  # 还款方式
+    repayment_amount: Decimal = Field(0.00, description="已还款金额，默认值为0.00")  # 已还款金额
+    # repayment_schedule: Optional[str] = Field(None, description="还款计划（如每期还款金额、还款日期等）")  # 还款计划
+    usage: str = Field(..., description="借款用途")  # 借款用途
+    bank_account: str = Field(..., description="收款银行账户")  # 收款银行账户
 
     class Config:
         orm_mode = True
