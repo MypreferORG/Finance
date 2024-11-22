@@ -7,9 +7,7 @@
 
 import re
 from datetime import timedelta
-
 from fastapi import APIRouter, HTTPException, Request
-
 from config import settings
 from core.Auth import verify_password, create_access_token
 from db.redis import sys_cache
@@ -24,9 +22,9 @@ router = APIRouter()
 async def login(request: Request, body: LoginWithPasswordRequest):
     """
     登录逻辑
-    :param request: Request
-    :param body: LoginWithPasswordRequest 或 LoginWithVerificationCodeRequest
-    :return: LoginResponse
+    :param request: Request 请求对象
+    :param body: LoginWithPasswordRequest 登录请求体
+    :return: LoginResponse 登录响应体
     """
     # 使用用户名(电话号码)和密码进行登录
     if re.match(r'^\d{11}$', body.username):

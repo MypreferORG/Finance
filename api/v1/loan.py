@@ -9,7 +9,7 @@ import json
 from decimal import Decimal
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
-from core.dependences import get_current_user, admin_required, user_required
+from core.dependences import admin_required, user_required
 from models import UserAuth, UserProfile, LoanRecord, InterestRate, RepaymentRecord
 from schemas import (LoanApplicationResponse,
                      LoanApplicationRequest,
