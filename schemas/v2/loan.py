@@ -30,6 +30,8 @@ class LoanRecordResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
+
 
 class PaginatedLoanRecordData(BaseModel):
     """
@@ -40,12 +42,22 @@ class PaginatedLoanRecordData(BaseModel):
     pageSize: int  # 每页数量
     records: List[LoanRecordResponse]  # 当前页的贷款记录列表
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
 class PaginatedLoanRecordResponse(BaseModel):
     """
     带分页信息的贷款记录响应数据
     """
     success: bool  # 请求是否成功
     data: PaginatedLoanRecordData  # 分页的贷款记录数据
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 class UpdateLoanRecordRequest(BaseModel):
     """
@@ -58,6 +70,11 @@ class UpdateLoanRecordRequest(BaseModel):
     usage: Optional[str] = Field(None, description="借款用途")
     bank_account: Optional[str] = Field(None, description="收款/还款银行账户")
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
 class CreateLoanRecordRequest(BaseModel):
     """
     新增贷款记录的请求模型
@@ -69,3 +86,7 @@ class CreateLoanRecordRequest(BaseModel):
     repayment_method: str = Field(..., description="还款方式(等额本金/等额本息)")
     usage: str = Field(..., description="借款用途")
     bank_account: str = Field(..., description="收款银行账户")
+
+    class Config:
+        orm_mode = True
+        from_attributes = True

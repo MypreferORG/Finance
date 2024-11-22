@@ -4,10 +4,9 @@
 # @Author : Jason
 # @Des: 管理端 用户信息相关的schema模型
 """
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Any
 from decimal import Decimal
 
 class UserAuthResponse(BaseModel):
@@ -22,6 +21,7 @@ class UserAuthResponse(BaseModel):
     updated_at: datetime  # 信息更新时间
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 class PaginatedUserData(BaseModel):
@@ -34,6 +34,7 @@ class PaginatedUserData(BaseModel):
     records: List[UserAuthResponse]  # 当前页的用户认证信息列表
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -45,6 +46,7 @@ class PaginatedUserResponse(BaseModel):
     data: PaginatedUserData  # 分页的用户数据
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -59,6 +61,7 @@ class UserAuthFilterRequest(BaseModel):
     limit: Optional[int] = 10  # 分页参数：每页的数量，默认为10
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -71,6 +74,7 @@ class UpdateUserAuthRequest(BaseModel):
     role: Optional[str]  # 修改角色 (user/admin/root)
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -79,7 +83,7 @@ class UserSignLogResponse(BaseModel):
     用户登录日志响应模型
     """
     id: int  # 日志ID
-    user_id: str  # 用户ID
+    # user_id: str  # 用户ID
     action: str  # 操作类型 (登录/登出)
     ip_address: Optional[str]  # IP地址
     user_agent: Optional[str]  # 用户设备信息
@@ -87,7 +91,17 @@ class UserSignLogResponse(BaseModel):
     message: Optional[str]  # 操作结果信息
     created_at: datetime  # 操作时间
 
+    # 添加 user 字段，但在序列化时排除
+    user: Any = Field(exclude=True)
+
+    # 计算字段，提取 user_id
+    @computed_field
+    @property
+    def user_id(self) -> str:
+        return str(self.user_id)
+
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -101,6 +115,7 @@ class PaginatedSignLogData(BaseModel):
     records: List[UserSignLogResponse]  # 当前页的用户登录日志列表
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -112,19 +127,7 @@ class PaginatedSignLogResponse(BaseModel):
     data: PaginatedSignLogData  # 分页的登录日志数据
 
     class Config:
-        from_attributes = True
-
-
-class UserSignLogFilterRequest(BaseModel):
-    """
-    登录日志筛选请求模型
-    """
-    action: Optional[str]  # 操作类型（登录/登出）
-    ip_address: Optional[str]  # 按IP地址筛选
-    start_time: Optional[datetime]  # 按操作开始时间筛选
-    end_time: Optional[datetime]  # 按操作结束时间筛选
-
-    class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -144,6 +147,7 @@ class UserProfileResponse(BaseModel):
     is_profile_completed: bool  # 是否完善个人信息
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -157,6 +161,7 @@ class PaginatedUserProfileData(BaseModel):
     records: List[UserProfileResponse]  # 当前页的用户个人信息列表
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -168,6 +173,7 @@ class PaginatedUserProfileResponse(BaseModel):
     data: PaginatedUserProfileData  # 分页的用户个人信息数据
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 
@@ -183,6 +189,7 @@ class UpdateUserProfileRequest(BaseModel):
     income: Optional[Decimal]
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 class CreateUserAuthRequest(BaseModel):
@@ -192,9 +199,10 @@ class CreateUserAuthRequest(BaseModel):
     username: str = Field(..., description="用户名（必须唯一）")
     phone_number: str = Field(..., description="手机号（必须唯一）")
     password: str = Field(..., description="用户密码")
-    role: str = Field("user", description="用户角色（默认是 user，可选 admin/root）")
+    role: str = Field("user", description="用户权限（默认是 user，可选 admin/root）")
 
     class Config:
+        orm_mode = True
         from_attributes = True
 
 class CreateUserProfileRequest(BaseModel):
@@ -207,7 +215,8 @@ class CreateUserProfileRequest(BaseModel):
     gender: Optional[str] = Field(None, description="性别")
     address: Optional[str] = Field(None, description="地址")
     date_of_birth: Optional[date] = Field(None, description="出生日期")
-    income: Optional[Decimal] = Field(None, description="月收入")
+    income: Optional[Decimal] = Field(None, description="  ")
 
     class Config:
+        orm_mode = True
         from_attributes = True

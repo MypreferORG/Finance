@@ -25,6 +25,8 @@ class RepaymentRecordResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
+
 
 class PaginatedRepaymentRecordData(BaseModel):
     """
@@ -35,12 +37,22 @@ class PaginatedRepaymentRecordData(BaseModel):
     pageSize: int  # 每页数量
     records: List[RepaymentRecordResponse]  # 当前页的还款记录列表
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
 class PaginatedRepaymentRecordResponse(BaseModel):
     """
     带分页信息的还款记录响应数据
     """
     success: bool  # 请求是否成功
     data: PaginatedRepaymentRecordData  # 分页的还款记录数据
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 class UpdateRepaymentRecordRequest(BaseModel):
     """
@@ -49,6 +61,11 @@ class UpdateRepaymentRecordRequest(BaseModel):
     amount: Optional[Decimal] = Field(None, description="还款金额")
     status: Optional[str] = Field(None, description="还款状态（如：successful、failed、overdue等）")
     message: Optional[str] = Field(None, description="备注信息")
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 class CreateRepaymentRecordRequest(BaseModel):
     """
@@ -59,3 +76,7 @@ class CreateRepaymentRecordRequest(BaseModel):
     amount: Decimal = Field(..., description="还款金额")
     status: str = Field(..., description="还款状态（如：successful、failed、overdue等）")
     message: Optional[str] = Field(None, description="备注信息")
+
+    class Config:
+        orm_mode = True
+        from_attributes = True

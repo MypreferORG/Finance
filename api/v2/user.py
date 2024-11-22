@@ -8,12 +8,15 @@ from fastapi import APIRouter, HTTPException, Query
 
 from core.Auth import get_password_hash
 from models.user import UserAuth, UserSignLog, UserProfile
-from schemas.v2.user import UserProfileResponse, UserSignLogFilterRequest, UserSignLogResponse, UserAuthResponse, \
+from schemas.v2.user import UserProfileResponse, UserSignLogResponse, UserAuthResponse, \
     UserAuthFilterRequest, UpdateUserAuthRequest, UpdateUserProfileRequest, CreateUserAuthRequest, \
     CreateUserProfileRequest, PaginatedUserResponse, PaginatedUserData, PaginatedSignLogResponse, PaginatedSignLogData, \
     PaginatedUserProfileResponse, PaginatedUserProfileData
 from typing import List, Optional
 from pydantic import BaseModel
+
+from utils import random_str
+
 router = APIRouter()
 
 @router.post("/auth", summary="新增用户认证信息")
@@ -33,15 +36,28 @@ async def create_user_auth(request: CreateUserAuthRequest):
     if existing_phone:
         raise HTTPException(status_code=400, detail="手机号已存在")
 
+    if request.role not in ["user", "admin", "root"]:
+        raise HTTPException(status_code=400, detail="无效的用户权限")
+
     # 创建新用户
     new_user = await UserAuth.create(
+        id=random_str(),
         username=request.username,
         phone_number=request.phone_number,
         hashed_password=get_password_hash(request.password),
         role=request.role,
     )
 
-    return {"msg": "用户认证信息创建成功", "user_id": new_user.id}
+    return {
+        "msg": "用户认证信息创建成功",
+        "user": {
+            "id": new_user.id,
+            "username": new_user.username,
+            "phone_number": new_user.phone_number,
+            "role": new_user.role,
+        }
+    }
+
 
 @router.get("/auth", summary="获取用户认证信息列表", response_model=PaginatedUserResponse)
 async def get_user_auth(
@@ -268,7 +284,11 @@ async def get_user_logs_by_id(user_id: str, page: int = Query(1, description="�
         raise HTTPException(status_code=404, detail="没有找到该用户的登录日志")
 
     # 数据转换
-    log_records = [UserSignLogResponse.from_orm(log) for log in logs]
+    # log_records = [UserSignLogResponse.from_orm(log) for log in logs]
+
+    log_records = [
+        UserSignLogResponse.from_orm({**log, "user_id": str(log.user_id)}) for log in logs
+    ]
 
     # 返回分页数据
     response_data = PaginatedSignLogResponse(
@@ -296,55 +316,6 @@ async def delete_user_log(log_id: int):
     await log.delete()
     return {"msg": "登录日志删除成功", "log_id": log_id}
 
-@router.post("/logs/filter", summary="按条件筛选登录日志", response_model=PaginatedSignLogResponse)
-async def filter_user_logs(
-        filter: UserSignLogFilterRequest,
-        page: int = Query(1, description="分页页码", ge=1),
-        limit: int = Query(10, description="分页大小", ge=1)
-):
-    """
-    按条件筛选登录日志
-    :param filter: 筛选条件
-    :param page: 分页页码
-    :param limit: 每页大小
-    :return: 登录日志列表
-    """
-    # 构建查询条件
-    query = UserSignLog.all()
-    if filter.action:
-        query = query.filter(action=filter.action)
-    if filter.ip_address:
-        query = query.filter(ip_address__icontains=filter.ip_address)
-    if filter.start_time:
-        query = query.filter(created_at__gte=filter.start_time)
-    if filter.end_time:
-        query = query.filter(created_at__lte=filter.end_time)
-
-    # 获取总记录数
-    total = await query.count()
-
-    # 获取分页数据
-    skip = (page - 1) * limit
-    logs = await query.offset(skip).limit(limit)
-
-    # 如果没有数据，返回 404
-    if not logs:
-        raise HTTPException(status_code=404, detail="没有找到符合条件的登录日志")
-
-    # 转换数据为响应模型
-    log_records = [UserSignLogResponse.from_orm(log) for log in logs]
-
-    # 构建响应数据
-    response_data = PaginatedSignLogResponse(
-        success=True,
-        data=PaginatedSignLogData(
-            total=total,
-            pageNo=page,
-            pageSize=limit,
-            records=log_records
-        )
-    )
-    return response_data
 
 @router.get("/profiles", summary="获取所有用户的个人信息", response_model=PaginatedUserProfileResponse)
 async def get_all_user_profiles(
