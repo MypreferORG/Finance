@@ -57,7 +57,7 @@ async def register_mysql(app: FastAPI, database: str = 'mysql'):
         database_connection = {
             'engine': 'tortoise.backends.sqlite',
             'credentials': {
-                'file_path': 'D:\\ML\\finance\\sqlite-tools-win-x64-3460100\\finance.db',  # SQLite 数据库文件路径
+                'file_path': getenv("SQLITE_PATH"),  # SQLite 数据库文件路径
             }
         }
     # MySQL 连接字典
