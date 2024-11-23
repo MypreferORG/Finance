@@ -27,7 +27,6 @@ async def get_profile(user: UserAuth = Depends(user_required)):
 
     if not user_profile:
         raise HTTPException(status_code=404, detail="用户未找到")
-    # print(user_profile.id)
     return user_profile
 
 
@@ -55,9 +54,6 @@ async def update_profile(request: UpdateProfileRequest, user: UserAuth = Depends
     for field in update_fields:
         setattr(user_profile, field, update_fields[field])
     await user_profile.save()
-
-    # 检查个人信息是否完整
-    await check_profile_completed(user_profile)
 
     return user_profile
 
@@ -98,9 +94,6 @@ async def bind_identity(request: VerifyIdentityRequest, user: UserAuth = Depends
     user_profile.id_card_number = request.id_card_number
     user_profile.id_card_expiry = request.id_card_expiry
     await user_profile.save()
-
-    # 检查个人信息是否完整
-    await check_profile_completed(user_profile)
 
     return {
         "success": True,
@@ -155,9 +148,6 @@ async def bind_academic(request: VerifyAcademicRequest, user: UserAuth = Depends
 
     user_profile.student_verified = True
     await user_profile.save()
-
-    # 检查个人信息是否完整
-    await check_profile_completed(user_profile)
 
     return {
         "success": True,
@@ -215,26 +205,3 @@ async def bind_bankcard(request: BindBankAccountRequest, user: UserAuth = Depend
 #     # 手机号换绑逻辑
 #     # todo: bind_phone 手机号换绑逻辑
 #     pass
-
-
-# 检查个人信息是否完善
-async def check_profile_completed(user_profile: UserProfile):
-    completed = 1
-    if not user_profile.full_name:
-        completed = 0
-    if not user_profile.phone_number:
-        completed = 0
-    if not user_profile.id_card_number or not user_profile.id_card_expiry:
-        completed = 0
-    if not user_profile.bank_account:
-        completed = 0
-    if not user_profile.date_of_birth:
-        completed = 0
-
-    if completed:
-        user_profile.is_profile_completed = True
-    else:
-        user_profile.is_profile_completed = False
-    await user_profile.save()
-
-

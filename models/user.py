@@ -83,6 +83,24 @@ class UserProfile(Model):
         table = "user_profile"
         indexes = [("user",)]  # 根据用户创建索引
 
+    async def save(self, *args, **kwargs):
+        # 检查是否所有关键字段都已填写
+        required_fields = [
+            self.full_name,
+            self.phone_number,
+            self.gender,
+            self.id_card_number,
+            self.id_card_expiry,
+            self.bank_account,
+            self.profession,
+            self.address,
+            self.date_of_birth
+        ]
+        self.is_profile_completed = all(required_fields)
+
+        # 调用父类的保存方法
+        await super().save(*args, **kwargs)
+
 
 class UserApplication(Model):
     """
