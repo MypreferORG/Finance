@@ -15,8 +15,9 @@ admin_api_router = APIRouter(
 
 # 注册所有子路由
 admin_api_router.include_router(auth.router, prefix="/auth", tags=["管理员登录"])
-# admin_api_router.include_router(user.router, prefix="/user", tags=["用户管理"])
-# admin_api_router.include_router(loan.router, prefix="/loan", tags=["贷款管理"])
+admin_api_router.include_router(user.router, prefix="/user", tags=["用户管理"])
+admin_api_router.include_router(loan.router, prefix="/loan", tags=["贷款管理"])
+admin_api_router.include_router(loan.router, prefix="/repayment", tags=["还款管理"])
 # admin_api_router.include_router(notification.router, prefix="/notification", tags=["通知管理"])
 admin_api_router.include_router(article.router, prefix="/article", tags=["文章管理"])
 admin_api_router.include_router(announcement.router, prefix="/announcement", tags=["公告管理"])

@@ -37,7 +37,7 @@ class UserSignLog(Model):
     """
     id = fields.IntField(pk=True)
     user = fields.ForeignKeyField("finance.UserAuth", related_name="user_login_logs", description="关联的用户")
-    action = fields.CharField(max_length=50, description="用户操作类型, 登录/登出）")
+    action = fields.CharField(max_length=50, description="用户操作类型, 登录/登出")
     ip_address = fields.CharField(max_length=45, null=True, description="IP地址（IPv4或IPv6）")
     user_agent = fields.CharField(max_length=255, null=True, description="用户设备信息（浏览器、操作系统等）")
     success = fields.BooleanField(default=True, description="操作是否成功")
