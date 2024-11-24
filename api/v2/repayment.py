@@ -70,10 +70,10 @@ async def get_all_repayment_records(
 
     # 如果没有数据，返回 404
     if not records:
-        raise HTTPException(status_code=404, detail="没有找到符合条件的还款记录")
+        raise HTTPException(status_code=400, detail="没有找到符合条件的还款记录")
 
     # 转换数据为响应模型
-    record_list = [RepaymentRecordResponse.from_attributes(record) for record in records]
+    record_list = records
 
     # 构建响应数据
     response_data = PaginatedRepaymentRecordResponse(

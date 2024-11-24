@@ -24,7 +24,7 @@ class RepaymentRecordResponse(BaseModel):
     message: Optional[str]
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -38,7 +38,7 @@ class PaginatedRepaymentRecordData(BaseModel):
     records: List[RepaymentRecordResponse]  # 当前页的还款记录列表
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -50,7 +50,7 @@ class PaginatedRepaymentRecordResponse(BaseModel):
     data: PaginatedRepaymentRecordData  # 分页的还款记录数据
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -64,7 +64,7 @@ class UpdateRepaymentRecordRequest(BaseModel):
     repayment_date: Optional[datetime] = Field(None, description="还款日期")
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -82,5 +82,5 @@ class CreateRepaymentRecordRequest(BaseModel):
 
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True

@@ -70,7 +70,7 @@ class UpdateLoanRecordRequest(BaseModel):
     bank_account: Optional[str] = Field(None, description="收款/还款银行账户")  # 可选，更新收款或还款银行账户
 
     class Config:
-        orm_mode = True  # ORM支持
+        # orm_mode = True  # ORM支持
         from_attributes = True  # 支持从属性生成模型数据
 
 
@@ -90,5 +90,5 @@ class CreateLoanRecordRequest(BaseModel):
     bank_account: str = Field(..., description="收款银行账户")  # 收款银行账户
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
