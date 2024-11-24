@@ -23,6 +23,8 @@ class Config(BaseSettings):
     # 数据库配置
     DATABASE = 'mysql'   # mysql, postgres, oracle, sqlite
 
+    OCR_URL = f'http://localhost:5000/'
+
     # 跨域请求
     CORS_ORIGINS: List = ["*"]
     CORS_ALLOW_CREDENTIALS: bool = True
