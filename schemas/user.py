@@ -54,8 +54,6 @@ class VerifyIdentityRequest(BaseModel):
     full_name: str
     id_card_number: str
     id_card_expiry: date
-    # id_card_front: UploadFile = File(...)  # todo: 身份证正面照片
-    # id_card_back: UploadFile = File(...)  # todo: 身份证反面照片
 
 
 # 学信网认证请求
