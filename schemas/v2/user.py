@@ -83,22 +83,23 @@ class UserSignLogResponse(BaseModel):
     用户登录日志响应模型
     """
     id: int  # 日志ID
-    # user_id: str  # 用户ID
+    user_id: int  # 用户ID
     action: str  # 操作类型 (登录/登出)
     ip_address: Optional[str]  # IP地址
     user_agent: Optional[str]  # 用户设备信息
-    success: bool  # 操作是否成功
+    success: int  # 操作是否成功
+    # todo 若为bool，无法在light2f显示
     message: Optional[str]  # 操作结果信息
     created_at: datetime  # 操作时间
 
-    # 添加 user 字段，但在序列化时排除
-    user: Any = Field(exclude=True)
-
-    # 计算字段，提取 user_id
-    @computed_field
-    @property
-    def user_id(self) -> str:
-        return str(self.user_id)
+    # # 添加 user 字段，但在序列化时排除
+    # user: Any = Field(exclude=True)
+    #
+    # # 计算字段，提取 user_id
+    # @computed_field
+    # @property
+    # def user_id(self) -> str:
+    #     return str(self.user_id)
 
     class Config:
         orm_mode = True
@@ -135,6 +136,7 @@ class UserProfileResponse(BaseModel):
     """
     用户个人信息响应模型
     """
+    id: int # 用户id
     username: str  # 用户名
     full_name: Optional[str]  # 姓名
     phone_number: str  # 电话号码
@@ -143,9 +145,12 @@ class UserProfileResponse(BaseModel):
     bank_account: Optional[str]  # 银行卡号
     address: Optional[str]  # 地址
     date_of_birth: Optional[date]  # 出生日期
+    student_verified: Optional[int]  # 是否学生认证
+    # todo bool无法在light2f显示
+    profession: Optional[str]  # 职业
     income: Optional[Decimal]  # 月收入
-    is_profile_completed: bool  # 是否完善个人信息
-
+    is_profile_completed: int  # 是否完善个人信息
+    # todo bool无法在light2f显示
     class Config:
         orm_mode = True
         from_attributes = True
@@ -181,12 +186,18 @@ class UpdateUserProfileRequest(BaseModel):
     """
     更新用户个人信息的请求模型
     """
-    full_name: Optional[str]
-    phone_number: Optional[str]
-    gender: Optional[str]
-    address: Optional[str]
-    date_of_birth: Optional[date]
-    income: Optional[Decimal]
+    full_name: Optional[str] = Field(None, description="姓名")
+    phone_number: Optional[str] = Field(None, description="手机号")
+    gender: Optional[str] = Field(None, description="性别")
+    address: Optional[str] = Field(None, description="地址")
+    date_of_birth: Optional[date] = Field(None, description="出生日期")
+    income: Optional[Decimal] = Field(None, description="月收入")
+    id_card_number: Optional[str] = Field(None, description="身份证号")
+    # id_card_expiry: Optional[date] = Field(None, description="身份证有效期")
+    bank_account: Optional[str] = Field(None, description="银行卡号")
+    profession: Optional[str] = Field(None, description="职业类别")
+    student_verified: Optional[bool] = Field(None, description="学信网认证状态")
+    # profile_picture: Optional[str] = Field(None, description="头像URL")
 
     class Config:
         orm_mode = True
@@ -209,13 +220,20 @@ class CreateUserProfileRequest(BaseModel):
     """
     新增用户个人信息的请求模型
     """
-    user_id: str = Field(..., description="用户的唯一ID")
+    user_id: int = Field(..., description="用户id")  # 必填
+    username: str = Field(..., description="用户名")  # 必填
     full_name: Optional[str] = Field(None, description="姓名")
-    phone_number: Optional[str] = Field(None, description="手机号")
+    phone_number: str = Field(..., description="手机号")  # 必填
     gender: Optional[str] = Field(None, description="性别")
+    id_card_number: Optional[str] = Field(None, description="身份证号")
+    # id_card_expiry: Optional[date] = Field(None, description="身份证有效期")
+    bank_account: Optional[str] = Field(None, description="银行卡号")
+    profession: Optional[str] = Field(None, description="职业类别")
     address: Optional[str] = Field(None, description="地址")
-    date_of_birth: Optional[date] = Field(None, description="出生日期")
-    income: Optional[Decimal] = Field(None, description="  ")
+    date_of_birth: Optional[date] = Field(None, description="出生年月")
+    income: Optional[Decimal] = Field(None, description="月收入")
+    student_verified: Optional[bool] = Field(False, description="是否学生认证")  # 默认False
+    # profile_picture: Optional[str] = Field(None, description="头像URL")
 
     class Config:
         orm_mode = True
