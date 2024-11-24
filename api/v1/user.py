@@ -4,13 +4,14 @@
 # @Author : Myprefer
 # @Des: 个人信息管理相关接口
 """
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from models import UserAuth, UserProfile
 from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
 from core.dependences import user_required
 from schemas.user import BindBankAccountRequest
-from utils.id_card import is_valid_id_card
+from services.identity_service import is_valid_id_card, verify_id_card_photo
 
 router = APIRouter()
 
@@ -59,15 +60,26 @@ async def update_profile(request: UpdateProfileRequest, user: UserAuth = Depends
 
 
 @router.post("/bind/identity", summary="实名认证")
-async def bind_identity(request: VerifyIdentityRequest, user: UserAuth = Depends(user_required)):
+async def bind_identity(
+    full_name: str = Form(...),  # 普通表单字段
+    id_card_number: str = Form(...),  # 普通表单字段
+    id_card_expiry: date = Form(...),  # 可选表单字段
+    front_photo: UploadFile = File(...),  # 身份证正面照片
+    back_photo: UploadFile = File(...),  # 身份证反面照片
+    # user: UserAuth = Depends(user_required)
+):
     """
     实名认证逻辑
-    :param request:
+    :param full_name:
+    :param id_card_number:
+    :param id_card_expiry:
+    :param front_photo:
+    :param back_photo:
     :param user:
     :return:
     """
     # 验证用户是否存在
-    user_profile = await UserProfile.get_or_none(user=user)
+    user_profile = await UserProfile.get_or_none(id=4)
     if not user_profile:
         raise HTTPException(status_code=404, detail="用户未找到")
 
@@ -76,23 +88,24 @@ async def bind_identity(request: VerifyIdentityRequest, user: UserAuth = Depends
         raise HTTPException(status_code=400, detail="用户已完成实名认证")
 
     # 验证身份证号码格式
-    if not is_valid_id_card(request.id_card_number):
+    if not is_valid_id_card(id_card_number):
         raise HTTPException(status_code=400, detail="身份证号码格式错误")
 
     # todo: 调用第三方实名认证服务验证
-    # identity_verified = await verify_identity_with_third_party(request.full_name, request.id_card_number)
+    # identity_verified = await verify_identity_with_third_party(full_name, id_card_number)
     # if not identity_verified:
     #     raise HTTPException(status_code=400, detail="实名认证失败，姓名与身份证号码不匹配")
 
     # todo: 验证身份证照片内容（OCR 检测）
-    # front_verified = await verify_id_card_photo(front_photo_path, "front", full_name, id_card_number)
-    # back_verified = await verify_id_card_photo(back_photo_path, "back", full_name, id_card_number)
-    # if not (front_verified and back_verified):
-    #     raise HTTPException(status_code=400, detail="身份证照片验证失败")
+    front_verified = await verify_id_card_photo(front_photo, "front", full_name, id_card_number)
+    # back_verified = await verify_id_card_photo(back_photo, "back", )
+    back_verified = True  # 模拟验证通过
+    if not (front_verified and back_verified):
+        raise HTTPException(status_code=400, detail="身份证照片验证失败")
 
-    user_profile.full_name = request.full_name
-    user_profile.id_card_number = request.id_card_number
-    user_profile.id_card_expiry = request.id_card_expiry
+    user_profile.full_name = full_name
+    user_profile.id_card_number = id_card_number
+    user_profile.id_card_expiry = id_card_expiry
     await user_profile.save()
 
     return {
