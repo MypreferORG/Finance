@@ -66,7 +66,7 @@ async def bind_identity(
     id_card_expiry: date = Form(...),  # 可选表单字段
     front_photo: UploadFile = File(...),  # 身份证正面照片
     back_photo: UploadFile = File(...),  # 身份证反面照片
-    # user: UserAuth = Depends(user_required)
+    user: UserAuth = Depends(user_required)
 ):
     """
     实名认证逻辑

@@ -174,7 +174,7 @@ async def repayment_plan(loan_id: int, user: UserAuth = Depends(user_required)):
     return repayment_plan_response
 
 
-@router.post("/repayment", summary="还款", response_model=RepaymentRequest)
+@router.post("/repayment", summary="还款")
 async def repayment(request: RepaymentRequest, user: UserAuth = Depends(user_required)):
     """
     还款逻辑
@@ -182,10 +182,6 @@ async def repayment(request: RepaymentRequest, user: UserAuth = Depends(user_req
     :param user: 当前登录用户
     :return: 还款记录
     """
-    # 查询用户
-    if not user:
-        raise HTTPException(status_code=404, detail="用户未找到")
-
     # 查询贷款记录
     loan_record = await LoanRecord.get_or_none(id=request.loan_id, user=user)
 
@@ -193,7 +189,7 @@ async def repayment(request: RepaymentRequest, user: UserAuth = Depends(user_req
     if not loan_record:
         raise HTTPException(status_code=404, detail="贷款记录未找到")
 
-    if loan_record.user_id != user.index and (user.role != 'admin' or user.role != 'root'):
+    if loan_record.user_id != user.index:
         raise HTTPException(status_code=401, detail="用户错误")
 
     # 验证还款金额
