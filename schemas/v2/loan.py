@@ -29,7 +29,7 @@ class LoanRecordResponse(BaseModel):
     updated_at: datetime  # 贷款信息更新时间
 
     class Config:
-        orm_mode = True  # ORM支持
+        # orm_mode = True  # ORM支持
         from_attributes = True  # 支持从属性生成模型数据
 
 class PaginatedLoanRecordData(BaseModel):
@@ -42,7 +42,7 @@ class PaginatedLoanRecordData(BaseModel):
     records: List[LoanRecordResponse]  # 当前页的贷款记录列表
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -54,7 +54,7 @@ class PaginatedLoanRecordResponse(BaseModel):
     data: PaginatedLoanRecordData  # 分页的贷款记录数据
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 

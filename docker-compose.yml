@@ -1,0 +1,15 @@
+version: '3'
+services:
+  finance1:
+    build:
+      context: .  # 上下文目录，指定 Dockerfile 所在的目录
+    image: finance
+    network_mode: host  # 使用宿主机的网络
+    volumes:
+      - ./:/app  # 将当前目录挂载到容器的 /app 目录
+    environment:
+      - FASTAPI_PORT=8000
+    # 启动
+    command: ["python", "main.py"]
+                               
+               
