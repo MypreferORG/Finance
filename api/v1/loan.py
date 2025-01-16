@@ -249,6 +249,19 @@ async def set_rate(rate: decimal.Decimal, user: UserAuth = Depends(admin_require
     }
 
 
+@router.get("/rate/", summary="获取贷款利率")
+async def set_rate(rate: decimal.Decimal):
+    """
+    获取贷款利率
+    :return: 利率
+    """
+
+    return {
+        "status": "success",
+        "rate": rate
+    }
+
+
 @router.get("/quota", summary="查询借款额度")
 async def get_loan_quota(user: UserAuth = Depends(user_required)):
     """

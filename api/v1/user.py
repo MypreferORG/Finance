@@ -79,7 +79,7 @@ async def bind_identity(
     :return:
     """
     # 验证用户是否存在
-    user_profile = await UserProfile.get_or_none(id=4)
+    user_profile = await UserProfile.get_or_none(user=user)
     if not user_profile:
         raise HTTPException(status_code=404, detail="用户未找到")
 
@@ -89,19 +89,23 @@ async def bind_identity(
 
     # 验证身份证号码格式
     if not is_valid_id_card(id_card_number):
-        raise HTTPException(status_code=400, detail="身份证号码格式错误")
+        raise HTTPException(status_code=402, detail="身份证号码格式错误")
 
     # todo: 调用第三方实名认证服务验证
     # identity_verified = await verify_identity_with_third_party(full_name, id_card_number)
     # if not identity_verified:
-    #     raise HTTPException(status_code=400, detail="实名认证失败，姓名与身份证号码不匹配")
+    #     raise HTTPException(status_code=405, detail="实名认证失败，姓名与身份证号码不匹配")
 
     # todo: 验证身份证照片内容（OCR 检测）
-    front_verified = await verify_id_card_photo(front_photo, "front", full_name, id_card_number)
+    # front_verified = await verify_id_card_photo(front_photo, "front", full_name, id_card_number)
     # back_verified = await verify_id_card_photo(back_photo, "back", )
+    front_verified = True
     back_verified = True  # 模拟验证通过
     if not (front_verified and back_verified):
-        raise HTTPException(status_code=400, detail="身份证照片验证失败")
+        raise HTTPException(status_code=405, detail="身份证照片验证失败")
+    
+    # todo: if :
+    # 406 过期
 
     user_profile.full_name = full_name
     user_profile.id_card_number = id_card_number

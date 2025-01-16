@@ -7,18 +7,19 @@
 import os
 from typing import List
 from pydantic.v1 import BaseSettings
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 
 
 class Config(BaseSettings):
     # 加载环境变量
-    load_dotenv(find_dotenv(), override=True)
+    load_dotenv()
     BASE_DIR = os.path.dirname('.')
 
     # 项目信息
     VERSION: str = "1.0.0"
     PROJECT_NAME: str = "finance"
     DESCRIPTION: str = '<a href="/redoc" target="_blank">redoc</a>'
+    FASTAPI_PORT: int = os.getenv('FASTAPI_PORT', 8000)
 
     # 数据库配置
     DATABASE = 'mysql'   # mysql, postgres, oracle, sqlite

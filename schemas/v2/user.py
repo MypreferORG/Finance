@@ -21,7 +21,7 @@ class UserAuthResponse(BaseModel):
     updated_at: datetime  # 信息更新时间
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 class PaginatedUserData(BaseModel):
@@ -34,7 +34,7 @@ class PaginatedUserData(BaseModel):
     records: List[UserAuthResponse]  # 当前页的用户认证信息列表
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -46,7 +46,7 @@ class PaginatedUserResponse(BaseModel):
     data: PaginatedUserData  # 分页的用户数据
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -61,7 +61,7 @@ class UserAuthFilterRequest(BaseModel):
     limit: Optional[int] = 10  # 分页参数：每页的数量，默认为10
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -74,7 +74,7 @@ class UpdateUserAuthRequest(BaseModel):
     role: Optional[str]  # 修改角色 (user/admin/root)
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -102,7 +102,7 @@ class UserSignLogResponse(BaseModel):
     #     return str(self.user_id)
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -116,7 +116,7 @@ class PaginatedSignLogData(BaseModel):
     records: List[UserSignLogResponse]  # 当前页的用户登录日志列表
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -128,7 +128,7 @@ class PaginatedSignLogResponse(BaseModel):
     data: PaginatedSignLogData  # 分页的登录日志数据
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -152,7 +152,7 @@ class UserProfileResponse(BaseModel):
     is_profile_completed: int  # 是否完善个人信息
     # todo bool无法在light2f显示
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -166,7 +166,7 @@ class PaginatedUserProfileData(BaseModel):
     records: List[UserProfileResponse]  # 当前页的用户个人信息列表
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -178,7 +178,7 @@ class PaginatedUserProfileResponse(BaseModel):
     data: PaginatedUserProfileData  # 分页的用户个人信息数据
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -200,7 +200,7 @@ class UpdateUserProfileRequest(BaseModel):
     # profile_picture: Optional[str] = Field(None, description="头像URL")
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 class CreateUserAuthRequest(BaseModel):
@@ -213,7 +213,7 @@ class CreateUserAuthRequest(BaseModel):
     role: str = Field("user", description="用户权限（默认是 user，可选 admin/root）")
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 class CreateUserProfileRequest(BaseModel):
@@ -236,5 +236,5 @@ class CreateUserProfileRequest(BaseModel):
     # profile_picture: Optional[str] = Field(None, description="头像URL")
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
