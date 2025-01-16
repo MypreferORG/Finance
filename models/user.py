@@ -71,8 +71,8 @@ class UserProfile(Model):
     student_verified = fields.BooleanField(default=False, description="学信网认证，学生专属")
     profile_picture = fields.CharField(max_length=255, null=True, description="头像URL")
     income = fields.DecimalField(max_digits=10, decimal_places=2, null=True, description="月收入")
-    max_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="最大借款额度")
-    credit = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="信用分数")
+    max_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=10000.0, description="最大借款额度")
+    credit = fields.DecimalField(max_digits=10, decimal_places=2, default=100.0, description="信用分数")
     loaned_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="已经贷款金额")
     is_profile_completed = fields.BooleanField(default=False, description="是否已经完善个人信息")
 

@@ -29,6 +29,10 @@ class UserProfileResponse(BaseModel):
     bank_account: Optional[str]  # 银行卡号
     profile_picture: Optional[str]  # 头像URL
     income: Optional[Decimal]  # 月收入
+    max_amount: Decimal #最大借款额度
+    credit: Decimal #信用分数
+    loaned_amount: Decimal #已经贷款金额
+
 
     class Config:
         from_attributes = True
