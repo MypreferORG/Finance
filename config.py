@@ -24,7 +24,7 @@ class Config(BaseSettings):
     # 数据库配置
     DATABASE = 'mysql'   # mysql, postgres, oracle, sqlite
 
-    OCR_URL = f'http://localhost:5000/'
+    OCR_URL = 'http://localhost:5000/'
 
     # 跨域请求
     CORS_ORIGINS: List = ["*"]
@@ -58,10 +58,6 @@ class Config(BaseSettings):
     # 支付宝的公钥，验证支付宝回传消息使用
     ALIPAY_PUBLIC_KEY_STRING = os.path.join(BASE_DIR, 'files/alipay_public'),  # 一定要注意，是支付宝给你的公钥，不是你自己生成的那个
     SIGN_TYPE = "RSA2",  # RSA 或者 RSA2  现在基本上都是用RSA2
-
-    #
-    RL_SMS_TEMPLATE_ID = os.getenv('RL_SMS_TEMPLATE_ID'),
-    RL_TEST_MOBILE = os.getenv('RL_TEST_MOBILE'),
 
 
 

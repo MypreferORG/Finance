@@ -5,13 +5,16 @@
 # @Des: 个人信息管理相关接口
 """
 from datetime import date
-
+import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from models import UserAuth, UserProfile
 from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
 from core.dependences import user_required
 from schemas.user import BindBankAccountRequest
-from services.identity_service import is_valid_id_card, verify_id_card_photo
+from services.identity_service import is_valid_id_card, verify_id_card_photo, verify_identity_with_third_party
+from tempfile import NamedTemporaryFile
+
+from utils.save import save_idcard_photo
 
 router = APIRouter()
 
@@ -91,21 +94,33 @@ async def bind_identity(
     if not is_valid_id_card(id_card_number):
         raise HTTPException(status_code=402, detail="身份证号码格式错误")
 
-    # todo: 调用第三方实名认证服务验证
-    # identity_verified = await verify_identity_with_third_party(full_name, id_card_number)
-    # if not identity_verified:
-    #     raise HTTPException(status_code=405, detail="实名认证失败，姓名与身份证号码不匹配")
+    # 检查身份证有效期是否过期
+    if id_card_expiry < date.today():
+        raise HTTPException(status_code=406, detail="身份证已过期")
 
-    # todo: 验证身份证照片内容（OCR 检测）
+    # 保存上传的身份证照片
+    front_path = await save_idcard_photo(front_photo, "front", user.id)
+    back_path = await save_idcard_photo(back_photo, "back", user.id)
+
+    idcard_details = {
+        "name": full_name,
+        "idNumber": id_card_number,
+        "id_card_expiry": id_card_expiry
+    }
+
+    # 调用第三方实名认证服务验证
+    # identity_verified = await verify_identity_with_third_party(front_path, back_path, idcard_details)
+    identity_verified = True  # 模拟验证通过
+    if not identity_verified:
+        raise HTTPException(status_code=405, detail="实名认证失败，姓名与身份证号码不匹配")
+
+    # 验证身份证照片内容
     # front_verified = await verify_id_card_photo(front_photo, "front", full_name, id_card_number)
     # back_verified = await verify_id_card_photo(back_photo, "back", )
-    front_verified = True
-    back_verified = True  # 模拟验证通过
-    if not (front_verified and back_verified):
-        raise HTTPException(status_code=405, detail="身份证照片验证失败")
-    
-    # todo: if :
-    # 406 过期
+    # front_verified = True
+    # back_verified = True  # 模拟验证通过
+    # if not (front_verified and back_verified):
+    #     raise HTTPException(status_code=405, detail="身份证照片验证失败")
 
     user_profile.full_name = full_name
     user_profile.id_card_number = id_card_number

@@ -5,10 +5,15 @@
 # @Des: 文章相关接口
 """
 
+from datetime import datetime
+from decimal import Decimal
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from models import Article
+from models.user import UserProfile, UserApplication, UserBehavior
 from schemas import ArticleResponse, ArticleAbstractResponse
+from core.dependences import user_required, UserAuth
+from services.passage_service import get_user_info, get_recommend_articles
 
 router = APIRouter()
 
@@ -21,7 +26,6 @@ async def list_articles():
     # todo: list_articles 获取文章推荐列表逻辑
     articles = await Article.all().order_by('-publish_date').limit(20)
     return articles
-
 
 @router.get("/search/{query}", summary="搜索文章", response_model=List[ArticleAbstractResponse])
 async def search_article(query: str):
@@ -55,3 +59,28 @@ async def read_article(article_id: int):
         raise HTTPException(status_code=404, detail="文章未找到")
 
     return article
+
+
+@router.get("/recommend", summary="推荐文章")
+async def recommend_articles(
+        user: UserAuth = Depends(user_required)
+):
+    """
+    todo:推荐文章逻辑
+    """
+    # 获取用户信息
+    user_profile = await UserProfile.get_or_none(user=user)
+    user_application = await UserApplication.get_or_none(user=user)
+    user_behavior = await UserBehavior.get_or_none(user=user)
+
+    user_info = get_user_info(user_profile, user_application, user_behavior)
+
+    if not user_info:
+        raise HTTPException(status_code=500, detail="获取用户信息失败")
+    
+    # 获取推荐文章
+    articles = get_recommend_articles(user_info)
+    if not articles:
+        raise HTTPException(status_code=500, detail="推荐文章失败")
+    print(articles)
+    return articles

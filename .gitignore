@@ -5,5 +5,3 @@ __pycache__
 .env
 .idea/misc.xml
 .idea/Finance.iml
-environment.yml
-fastapi.tar.gz

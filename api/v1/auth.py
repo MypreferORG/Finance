@@ -45,8 +45,8 @@ async def register(request: Request, body: RegisterRequest):
     if existing_number:
         raise HTTPException(status_code=400, detail="该电话号码已注册")
 
-    # 注册时检查验证码 todo: 验证码逻辑
-    # is_verified = verify_sms_code(body.verification_code, body.phone_number)
+    # 注册时检查验证码
+    # is_verified = await verify_sms_code(body.phone_number, body.verification_code)
     is_verified = True
 
     if not is_verified:
@@ -101,14 +101,14 @@ async def login(request: Request, body: Union[LoginWithPasswordRequest, LoginWit
     elif isinstance(body, LoginWithVerificationCodeRequest):
         # 使用手机号和验证码进行登录
 
-        # 验证验证码 todo: 验证码逻辑
-        # is_verified = verify_sms_code(body.verification_code, body.phone_number)
-        is_verified = True
+        # 验证验证码
+        is_verified = await verify_sms_code(body.phone_number, body.verification_code)
+        # is_verified = True
 
         if not is_verified:
             raise HTTPException(status_code=400, detail="验证码错误或已过期")
 
-        user = await UserAuth.get_or_none(phone=body.phone_number)
+        user = await UserAuth.get_or_none(phone_number=body.phone_number)
         if not user:
             raise HTTPException(status_code=400, detail="手机号未注册")
 
@@ -143,7 +143,7 @@ async def forgot_password(request: ForgotPasswordRequest):
     if not user:
         raise HTTPException(status_code=404, detail="该手机号未注册")
 
-    # 生成并发送验证码给用户 todo: 发送验证码
+    # 生成并发送验证码给用户
     # await generate_and_send_code(request.phone_number)
 
     return {"msg": "验证码已发送"}
