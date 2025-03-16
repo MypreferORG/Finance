@@ -4,17 +4,18 @@
 # @Author : Myprefer
 # @Des: 用户注册、登录相关接口
 """
-
+import random
 import re
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Union
 from fastapi import APIRouter, HTTPException, Request, Depends
 from config import settings
 from core.dependences import get_current_user
 from db.redis import sys_cache
-from models import UserAuth, UserProfile, UserSignLog, UserApplication, UserBehavior
+from models import UserAuth, UserProfile, UserSignLog, UserApplication, UserBehavior, Article
 from core.Auth import verify_password, create_access_token, get_password_hash
 from schemas.auth import SendVerificationCodeRequest
+from services.passage_service import get_recommend_articles
 from services.sms_service import generate_and_send_code, verify_sms_code
 from utils import random_str
 from schemas import (RegisterRequest,
@@ -62,7 +63,33 @@ async def register(request: Request, body: RegisterRequest):
     await UserProfile.create(user=user, phone_number=body.phone_number, username=body.username)
     await UserApplication.create(user=user)
     await UserBehavior.create(user=user)
+    # 触发推荐文章逻辑
+    user_info = {
+        "username": body.username,
+        "phone_number": body.phone_number
+    }
+    recommended_articles_data = get_recommend_articles(user_info)
 
+    if not recommended_articles_data:
+        raise HTTPException(status_code=500, detail="推荐文章失败")
+
+    for article_data in recommended_articles_data:
+        # 检查文章是否已存在
+        article = await Article.get_or_none(link=article_data["url"])
+        if not article:
+            publish_date = datetime.now()
+            random_months = random.randint(1, 12)
+            random_days = random.randint(0,30)
+            fakeTime = publish_date - timedelta(days=random_months*30+random_days)
+            # 如果文章不存在，创建文章
+            article = await Article.create(
+                link=article_data["url"],
+                title=article_data.get("title"),
+                summary=article_data.get("summary"),
+                publish_date=fakeTime
+            )
+        # 绑定用户与文章
+        await user.recommended_articles.add(article)
     # 生成JWT token
     access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": str(user.id)}, expires_delta=access_token_expires)

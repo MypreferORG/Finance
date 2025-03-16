@@ -5,66 +5,100 @@
 # @Des: 文章与公告的schema模型
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 from typing import Optional, List
 from datetime import datetime
 
 
 # 文章创建请求数据
+# class CreateArticleRequest(BaseModel):
+#     title: str
+#     content: str
+#     author: str
+#     cover_image: Optional[str] = None
+#     summary: Optional[str] = None
+#
+#     class Config:
+#         from_attributes = True
+
+# 文章创建请求数据（只存储文章链接）
 class CreateArticleRequest(BaseModel):
-    title: str
-    content: str
-    author: str
-    cover_image: Optional[str] = None
+    link: HttpUrl  # 确保是合法的 URL
+    title: Optional[str] = None  # 文章标题可以为空
     summary: Optional[str] = None
 
     class Config:
         from_attributes = True
-
 
 # 更新文章请求数据
+# class UpdateArticleRequest(BaseModel):
+#     title: Optional[str] = None
+#     content: Optional[str] = None
+#     author: Optional[str] = None
+#     cover_image: Optional[str] = None
+#     summary: Optional[str] = None
+#     status: Optional[str] = None
+#
+#
+#     class Config:
+#         from_attributes = True
+
+# 更新文章请求数据（只允许更新标题）
 class UpdateArticleRequest(BaseModel):
     title: Optional[str] = None
-    content: Optional[str] = None
-    author: Optional[str] = None
-    cover_image: Optional[str] = None
     summary: Optional[str] = None
-    status: Optional[str] = None
-
-
     class Config:
         from_attributes = True
+
+# 文章响应数据
+# class ArticleResponse(BaseModel):
+#     id: int
+#     title: str
+#     author: str
+#     content: str
+#     cover_image: Optional[str] = None
+#     summary: Optional[str] = None
+#     publish_date: datetime
+#     views: int
+#     status: str
+#
+#
+#     class Config:
+#         from_attributes = True
 
 
 # 文章响应数据
 class ArticleResponse(BaseModel):
     id: int
-    title: str
-    author: str
-    content: str
-    cover_image: Optional[str] = None
-    summary: Optional[str] = None
+    link: HttpUrl
+    title: Optional[str] = None
     publish_date: datetime
-    views: int
-    status: str
-
+    summary: Optional[str] = None
 
     class Config:
         from_attributes = True
 
+# # 文章摘要响应数据
+# class ArticleAbstractResponse(BaseModel):
+#     id: int
+#     title: str
+#     author: str
+#     cover_image: Optional[str] = None
+#     summary: Optional[str] = None
+#     publish_date: datetime
+#
+#     class Config:
+#         from_attributes = True
 
-# 文章摘要响应数据
 class ArticleAbstractResponse(BaseModel):
     id: int
-    title: str
-    author: str
-    cover_image: Optional[str] = None
+    url: HttpUrl  # 使用 HttpUrl 类型确保链接合法性
+    title: Optional[str] = None
     summary: Optional[str] = None
     publish_date: datetime
 
     class Config:
         from_attributes = True
-
 
 # 分页数据
 class PaginatedArticleData(BaseModel):

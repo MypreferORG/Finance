@@ -4,7 +4,8 @@
 # @Author : Myprefer
 # @Des: 
 """
-
+import random
+from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, Depends
 from core.dependences import admin_required
@@ -22,13 +23,23 @@ async def publish_article(article: CreateArticleRequest):
     :param article: 文章详细信息
     :return article_id: 文章id
     """
+    # 检查文章是否已存在（根据 URL）
+    existing_article = await Article.get_or_none(link=article.link)
+    if existing_article:
+        return {
+            "msg": "文章已存在",
+            "id": existing_article.id
+        }
+    publish_date = datetime.now()
+    random_months = random.randint(1, 12)
+    random_days = random.randint(0, 30)
+    fakeTime = publish_date - timedelta(days=random_months * 30 + random_days)
     # 创建新文章记录
     new_article = await Article.create(
+        link=article.link,
         title=article.title,
-        content=article.content,
-        author=article.author,
-        cover_image=article.cover_image,
-        summary=article.summary
+        summary=article.summary,
+        publish_date=fakeTime
     )
 
     return {
@@ -61,16 +72,12 @@ async def list_articles(
     pageNo: int = Query(1, alias="pageNo", ge=1),
     pageSize: int = Query(10, alias="pageSize", ge=1),
     title: Optional[str] = Query(None, alias="title"),
-    status: Optional[str] = Query(None, alias="status"),
-    author: Optional[str] = Query(None, alias="author"),
 ):
     """
     获取文章列表逻辑
     :param pageNo: 页码
     :param pageSize: 每页数量
     :param title: 标题
-    :param status: 状态
-    :param author: 作者
     :return: articles: 文章摘要列表
     """
     # 计算要跳过的记录数量
@@ -80,15 +87,11 @@ async def list_articles(
     query = Article.all()
     if title:
         query = query.filter(title__icontains=title)
-    if status:
-        query = query.filter(status__icontains=status)
-    if author:
-        query = query.filter(author__icontains=author)
 
     # 获取符合条件的总记录数
     total_count = await query.count()
 
-    # 获取当前页的公告数据
+    # 获取当前页的文章数据
     articles = await query.order_by('-publish_date').offset(skip).limit(pageSize)
 
     # 格式化数据并返回
@@ -114,7 +117,7 @@ async def update_article(
     :param article: 文章详细信息
     :return: article_id: 文章id
     """
-    # 根据公告ID获取公告
+    # 根据文章ID获取文章
     existing_article = await Article.get_or_none(id=article_id)
 
     # 如果文章不存在，抛出404错误
@@ -124,18 +127,9 @@ async def update_article(
     # 更新文章
     if article.title:
         existing_article.title = article.title
-    if article.status:
-        existing_article.status = article.status
-    if article.content:
-        existing_article.content = article.content
-    if article.author:
-        existing_article.author = article.author
-    if article.cover_image:
-        existing_article.cover_image = article.cover_image
     if article.summary:
         existing_article.summary = article.summary
     await existing_article.save()
 
     return {"msg": "文章更新成功", "article_id": article_id}
-
 

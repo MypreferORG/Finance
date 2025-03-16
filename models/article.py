@@ -7,30 +7,51 @@
 
 from tortoise import fields
 from tortoise.models import Model
+# from .user import UserAuth
 
+# class Article(Model):
+#     """
+#     文章表：用于记录微信公众号文章的信息
+#     """
+#     id = fields.IntField(pk=True)
+#     title = fields.CharField(max_length=255, description="文章标题")
+#     content = fields.TextField(description="文章内容，支持Markdown或HTML格式")
+#     author = fields.CharField(max_length=100, description="作者姓名或昵称")
+#     publish_date = fields.DatetimeField(auto_now_add=True, description="文章发布时间")
+#     updated_at = fields.DatetimeField(auto_now=True, description="文章最后更新时间")
+#     status = fields.CharField(max_length=20, default="published", description="文章状态（如：published、hidden、deleted等）")
+#     cover_image = fields.CharField(max_length=255, null=True, description="封面图片URL")
+#     summary = fields.TextField(null=True, description="文章摘要或简介")
+#     views = fields.IntField(default=0, description="阅读次数")
+#
+#     class Meta:
+#         table = "article"
+#         indexes = [("title", "publish_date")]  # 根据标题和发布时间创建索引
+#
+#     def __str__(self):
+#         return f"Article(id={self.id}, title={self.title}, author={self.author}, status={self.status})"
 
 class Article(Model):
     """
-    文章表：用于记录微信公众号文章的信息
+    文章表：用于记录文章的链接信息
     """
     id = fields.IntField(pk=True)
-    title = fields.CharField(max_length=255, description="文章标题")
-    content = fields.TextField(description="文章内容，支持Markdown或HTML格式")
-    author = fields.CharField(max_length=100, description="作者姓名或昵称")
-    publish_date = fields.DatetimeField(auto_now_add=True, description="文章发布时间")
-    updated_at = fields.DatetimeField(auto_now=True, description="文章最后更新时间")
-    status = fields.CharField(max_length=20, default="published", description="文章状态（如：published、hidden、deleted等）")
-    cover_image = fields.CharField(max_length=255, null=True, description="封面图片URL")
+    link = fields.CharField(max_length=255, description="文章链接", unique=True)  # 确保链接唯一
+    title = fields.CharField(max_length=255, description="文章标题", null=True)  # 可选字段
+    publish_date = fields.DatetimeField(auto_now_add=True, description="记录时间")  # 记录链接的存储时间
     summary = fields.TextField(null=True, description="文章摘要或简介")
-    views = fields.IntField(default=0, description="阅读次数")
+    recommend_users = fields.ManyToManyField(
+            "models.UserAuth",
+            related_name="recommended_articles",
+            description="推荐该文章的用户"
+    )
 
     class Meta:
         table = "article"
-        indexes = [("title", "publish_date")]  # 根据标题和发布时间创建索引
+        indexes = [("link",)]  # 根据链接创建索引
 
     def __str__(self):
-        return f"Article(id={self.id}, title={self.title}, author={self.author}, status={self.status})"
-
+        return f"Article(id={self.id}, link={self.link})"
 
 class Announcement(Model):
     """

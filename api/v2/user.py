@@ -4,9 +4,13 @@
 # @Author : Jason
 # @Des: 用户管理接口
 """
+import random
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, HTTPException, Query
 
 from core.Auth import get_password_hash
+from models import Article
 from models.user import UserAuth, UserSignLog, UserProfile
 from schemas.v2.user import UserProfileResponse, UserSignLogResponse, UserAuthResponse, \
     UserAuthFilterRequest, UpdateUserAuthRequest, UpdateUserProfileRequest, CreateUserAuthRequest, \
@@ -15,6 +19,7 @@ from schemas.v2.user import UserProfileResponse, UserSignLogResponse, UserAuthRe
 from typing import List, Optional
 from pydantic import BaseModel
 
+from services.passage_service import get_recommend_articles
 from utils import random_str
 
 router = APIRouter()
@@ -175,6 +180,9 @@ async def delete_user_auth(user_id: str):
     user = await UserAuth.get_or_none(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户未找到")
+
+    # 删除用户与文章的关联
+    await user.recommended_articles.clear()
 
     # 删除关联的登录日志
     await UserSignLog.filter(user=user).delete()
@@ -429,6 +437,31 @@ async def update_user_profile(user_id: int, request: UpdateUserProfileRequest):
 
     await profile.save()
 
+    # 触发推荐文章逻辑
+    user_info = request.dict(exclude_unset=True)  # 假设用户更新的信息可以作为推荐系统的输入
+    recommended_articles_data = get_recommend_articles(user_info)
+
+    if not recommended_articles_data:
+        raise HTTPException(status_code=500, detail="推荐文章失败")
+
+    for article_data in recommended_articles_data:
+        # 检查文章是否已存在
+        article = await Article.get_or_none(link=article_data["url"])
+        if not article:
+            publish_date = datetime.now()
+            random_months = random.randint(1, 12)
+            random_days = random.randint(0,30)
+            fakeTime = publish_date - timedelta(days=random_months*30+random_days)
+            # 如果文章不存在，创建文章
+            article = await Article.create(
+                link=article_data["url"],
+                title=article_data.get("title"),
+                summary=article_data.get("summary"),
+                publish_date=fakeTime
+            )
+        # 绑定用户与文章
+        await user.recommended_articles.add(article)
+
     return {
         "msg": "用户个人信息修改成功",
         "user_id": user_id,
@@ -520,4 +553,132 @@ async def create_user_profile(request: CreateUserProfileRequest):
         profile_picture=request.profile_picture,
     )
 
+    # 触发推荐文章逻辑
+    user_info = request.dict(exclude_unset=True)  # 假设用户信息可以作为推荐系统的输入
+    recommended_articles_data = get_recommend_articles(user_info)
+
+    if not recommended_articles_data:
+        raise HTTPException(status_code=500, detail="推荐文章失败")
+
+    for article_data in recommended_articles_data:
+        # 检查文章是否已存在
+        article = await Article.get_or_none(link=article_data["url"])
+        publish_date = datetime.now()
+        random_months = random.randint(1, 12)
+        random_days = random.randint(0, 30)
+        fakeTime = publish_date - timedelta(days=random_months * 30 + random_days)
+        if not article:
+            # 如果文章不存在，创建文章
+            article = await Article.create(
+                link=article_data["url"],
+                title=article_data.get("title"),
+                summary=article_data.get("summary"),
+                publish_date=fakeTime
+            )
+        # 绑定用户与文章
+        await user.recommended_articles.add(article)
+
     return {"msg": "用户个人信息创建成功", "profile_id": new_profile.id}
+
+@router.get("/auth/{user_id}/recommended-articles", summary="获取用户的推荐文章")
+async def get_user_recommended_articles(
+    user_id: str,
+    pageNo: int = Query(1, alias="pageNo", ge=1),
+    pageSize: int = Query(10, alias="pageSize", ge=1),
+):
+    """
+    获取用户的推荐文章
+    :param user_id: 用户ID
+    :param pageNo: 分页页码
+    :param pageSize: 每页大小
+    :return: 推荐文章列表
+    """
+    # 获取用户
+    user = await UserAuth.get_or_none(id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户未找到")
+
+    # 获取用户推荐的文章
+    query = user.recommended_articles.all()
+    total = await query.count()
+
+    # 分页处理
+    skip = (pageNo - 1) * pageSize
+    articles = await query.offset(skip).limit(pageSize)
+
+    # 构建响应数据
+    response_data = {
+        "success": True,
+        "data": {
+            "total": total,
+            "pageNo": pageNo,
+            "pageSize": pageSize,
+            "records": [
+                {
+                    "id": article.id,
+                    "link": article.link,
+                    "title": article.title,
+                    "summary": article.summary,
+                    "publish_date": article.publish_date,
+                }
+                for article in articles
+            ],
+        },
+    }
+    return response_data
+
+@router.post("/auth/{user_id}/recommend-article/{article_id}", summary="手动推荐文章给用户")
+async def recommend_article_to_user(user_id: str, article_id: int):
+    """
+    手动推荐文章给用户
+    :param user_id: 用户ID
+    :param article_id: 文章ID
+    :return: 操作结果
+    """
+    # 获取用户
+    user = await UserAuth.get_or_none(id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户未找到")
+
+    # 获取文章
+    article = await Article.get_or_none(id=article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="文章未找到")
+
+    # 检查是否已经推荐过
+    is_recommended = await user.recommended_articles.filter(id=article_id).exists()
+    if is_recommended:
+        return {"msg": "文章已经推荐给该用户"}
+
+    # 绑定文章到用户
+    await user.recommended_articles.add(article)
+
+    return {"msg": "文章推荐成功"}
+
+@router.delete("/auth/{user_id}/recommend-article/{article_id}", summary="移除用户的推荐文章")
+async def remove_recommended_article_from_user(user_id: str, article_id: int):
+    """
+    移除用户的推荐文章
+    :param user_id: 用户ID
+    :param article_id: 文章ID
+    :return: 操作结果
+    """
+    # 获取用户
+    user = await UserAuth.get_or_none(id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户未找到")
+
+    # 获取文章
+    article = await Article.get_or_none(id=article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="文章未找到")
+
+    # 检查是否已经推荐过
+    is_recommended = await user.recommended_articles.filter(id=article_id).exists()
+    if not is_recommended:
+        raise HTTPException(status_code=400, detail="文章未被推荐给该用户")
+
+    # 移除文章与用户的关联
+    await user.recommended_articles.remove(article)
+
+    return {"msg": "文章已从推荐列表中移除"}

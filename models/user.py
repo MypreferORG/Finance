@@ -8,7 +8,27 @@ from datetime import date
 
 from tortoise import fields
 from tortoise.models import Model
+# from .article import Article
 
+# class UserAuth(Model):
+#     """
+#     用户注册信息表：用于登录和找回密码
+#     """
+#     index = fields.IntField(pk=True, description="索引")
+#     id = fields.CharField(max_length=32, unique=True, description='唯一用户id')
+#     username = fields.CharField(max_length=50, unique=True, description='唯一用户名, 用于登录')
+#     phone_number = fields.CharField(max_length=11, unique=True, description='唯一用户电话号码, 用于登录及找回密码')
+#     hashed_password = fields.CharField(max_length=255, description='加密后的密码')
+#     role = fields.CharField(max_length=10, default="user", description="用户权限, 分为 user/admin/root")
+#     created_at = fields.DatetimeField(auto_now_add=True, description="注册时间")
+#     updated_at = fields.DatetimeField(auto_now=True, description="信息更新时间")
+#
+#     class Meta:
+#         table_name = 'user_auth'
+#         indexes = [('username', 'phone_number')]  # 创建索引
+#
+#     def __str__(self):
+#         return f"UserAuth(id={self.id}, username={self.username})"
 
 class UserAuth(Model):
     """
@@ -23,13 +43,17 @@ class UserAuth(Model):
     created_at = fields.DatetimeField(auto_now_add=True, description="注册时间")
     updated_at = fields.DatetimeField(auto_now=True, description="信息更新时间")
 
+    # 新增字段：用户与文章的关联关系（推荐文章）
+    recommended_articles = fields.ManyToManyField(
+        "models.Article", related_name="recommended_users", description="用户推荐的文章"
+    )
+
     class Meta:
         table_name = 'user_auth'
         indexes = [('username', 'phone_number')]  # 创建索引
 
     def __str__(self):
         return f"UserAuth(id={self.id}, username={self.username})"
-
 
 class UserSignLog(Model):
     """

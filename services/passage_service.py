@@ -4,6 +4,11 @@
 # @Author : Myprefer
 # @Des: 个性化文章推荐
 """
+
+# 依赖关系：
+# search_articles_by_keywords -> get_recommend_articles
+# -> get_user_info -> model_to_description_dict
+
 import json
 import os
 import re
@@ -11,7 +16,8 @@ from http import HTTPStatus
 from dashscope import Application
 from datetime import datetime
 from decimal import Decimal
-
+import duckduckgo_search
+from duckduckgo_search import DDGS
 def model_to_description_dict(instance, keys_to_remove=None):
     model_class = type(instance)
     data = {}
@@ -78,31 +84,88 @@ def get_user_info(user_profile, user_application, user_behavior):
 
 def get_recommend_articles(user_info):
     """
-    todo:获取个性化文章推荐
     :param user_info:
-    :return:
+    :return: list:推荐关键词列表
     """
-    print(f'用户信息：{user_info}')
-    response = Application.call(
-        # 若没有配置环境变量，可用百炼API Key将下行替换为：api_key="sk-xxx"。但不建议在生产环境中直接将API Key硬编码到代码中，以减少API Key泄露风险。
-        api_key=os.getenv("DASHSCOPE_API_KEY"),
-        app_id='929250cd2f7c494f95e73810d0fc3155',# 替换为实际的应用 ID
-        prompt=user_info)
+    # 默认关键词
+    default_keywords = [
+        "贷款申请流程",
+        "如何提高信用评分",
+        "贷款利率计算",
+        "提前还款的利弊",
+        "如何选择贷款产品",
+        "信用报告解读",
+        "贷款逾期处理",
+        "理财基础知识",
+        "如何规划个人财务",
+    ]
 
-    if response.status_code != HTTPStatus.OK:
-        # print(f'request_id={response.request_id}')
-        # print(f'code={response.status_code}')
-        # print(f'message={response.message}')
-        # print(f'请参考文档：https://help.aliyun.com/zh/model-studio/developer-reference/error-code')
-        return None
-    else:
-        # print(response.output.text)
+    print(f'用户信息：{user_info}')
+    try:
+        response = Application.call(
+            api_key=os.getenv("DASHSCOPE_API_KEY"),
+            app_id='sk-ba60782b21b2488285776a2dcb340cc1',
+            prompt=user_info
+        )
+
+        if response.status_code != HTTPStatus.OK:
+            print(f"API 调用失败: {response.message}")
+            return default_keywords  # 返回默认关键词
+
+        # 解析 API 响应，提取推荐关键词
         json_pattern = r"```json\n([\s\S]*?)\n```"
         match = re.search(json_pattern, response.output.text)
         if match:
             search_keywords = match.group(1).strip().replace('\n', '')
             search_keywords = json.loads(search_keywords)
-            print(search_keywords)
+            print(f"推荐关键词: {search_keywords}")
             return search_keywords
         else:
-            return None
+            return default_keywords  # 返回默认关键词
+    except Exception as e:
+        print(f"API 调用异常: {e}")
+        return default_keywords  # 返回默认关键词
+
+    # print(f'用户信息：{user_info}')
+    # response = Application.call(
+    #     # 若没有配置环境变量，可用百炼API Key将下行替换为：api_key="sk-xxx"。但不建议在生产环境中直接将API Key硬编码到代码中，以减少API Key泄露风险。
+    #     api_key=os.getenv("DASHSCOPE_API_KEY"),
+    #     app_id='sk-ba60782b21b2488285776a2dcb340cc1',# 替换为实际的应用 ID
+    #     prompt=user_info)
+    #
+    # if response.status_code != HTTPStatus.OK:
+    #     # print(f'request_id={response.request_id}')
+    #     # print(f'code={response.status_code}')
+    #     # print(f'message={response.message}')
+    #     # print(f'请参考文档：https://help.aliyun.com/zh/model-studio/developer-reference/error-code')
+    #     return None
+    # else:
+    #     # print(response.output.text)
+    #     json_pattern = r"```json\n([\s\S]*?)\n```"
+    #     match = re.search(json_pattern, response.output.text)
+    #     if match:
+    #         search_keywords = match.group(1).strip().replace('\n', '')
+    #         search_keywords = json.loads(search_keywords)
+    #         print(search_keywords)
+    #         return search_keywords
+    #     else:
+    #         return None
+
+def search_articles_by_keywords(keywords):
+    """
+    根据关键词列表搜索文章，并返回文章名、摘要和链接。
+
+    :param keywords: list, 关键词列表
+    :return: list of dict, 包含文章名、摘要和链接的字典列表
+    """
+    search_results = []
+    ddgs = DDGS()  # 创建 DDGS 实例
+    for keyword in keywords:
+        results = ddgs.text(keyword, max_results=3)  # 每个关键词返回 3 条结果
+        for result in results:
+            search_results.append({
+                "title": result.get("title", "无标题"),
+                "summary": result.get("body", "略"),  # 如果没有摘要，则用 "略" 代替
+                "url": result.get("href", "无链接")
+            })
+    return search_results

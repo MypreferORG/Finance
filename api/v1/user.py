@@ -7,6 +7,8 @@
 from datetime import date
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+
+from api.v1.article import recommend_articles
 from models import UserAuth, UserProfile
 from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
 from core.dependences import user_required
@@ -58,6 +60,8 @@ async def update_profile(request: UpdateProfileRequest, user: UserAuth = Depends
     for field in update_fields:
         setattr(user_profile, field, update_fields[field])
     await user_profile.save()
+    # 调用推荐文章逻辑
+    await recommend_articles(user=user)
 
     return user_profile
 
@@ -127,6 +131,9 @@ async def bind_identity(
     user_profile.id_card_expiry = id_card_expiry
     await user_profile.save()
 
+    # 调用推荐文章逻辑
+    await recommend_articles(user=user)
+
     return {
         "success": True,
         "msg": "实名认证成功"
@@ -180,6 +187,9 @@ async def bind_academic(request: VerifyAcademicRequest, user: UserAuth = Depends
 
     user_profile.student_verified = True
     await user_profile.save()
+
+    # 调用推荐文章逻辑
+    await recommend_articles(user=user)
 
     return {
         "success": True,
