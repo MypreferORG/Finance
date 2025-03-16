@@ -8,7 +8,7 @@
 # 依赖关系：
 # search_articles_by_keywords -> get_recommend_articles
 # -> get_user_info -> model_to_description_dict
-
+import time
 import json
 import os
 import re
@@ -18,6 +18,9 @@ from datetime import datetime
 from decimal import Decimal
 import duckduckgo_search
 from duckduckgo_search import DDGS
+from duckduckgo_search.exceptions import DuckDuckGoSearchException
+
+
 def model_to_description_dict(instance, keys_to_remove=None):
     model_class = type(instance)
     data = {}
@@ -161,11 +164,16 @@ def search_articles_by_keywords(keywords):
     search_results = []
     ddgs = DDGS()  # 创建 DDGS 实例
     for keyword in keywords:
-        results = ddgs.text(keyword, max_results=3)  # 每个关键词返回 3 条结果
-        for result in results:
-            search_results.append({
-                "title": result.get("title", "无标题"),
-                "summary": result.get("body", "略"),  # 如果没有摘要，则用 "略" 代替
-                "url": result.get("href", "无链接")
-            })
+        try:
+            results = ddgs.text(keyword, max_results=3)  # 每个关键词返回 3 条结果
+            for result in results:
+                search_results.append({
+                    "title": result.get("title", "无标题"),
+                    "summary": result.get("body", "略"),  # 如果没有摘要，则用 "略" 代替
+                    "url": result.get("href", "无链接")
+                })
+            time.sleep(2)  # 每次请求后等待 2 秒，避免触发速率限制
+        except DuckDuckGoSearchException as e:
+            print(f"搜索关键词 '{keyword}' 时出错: {e}")
+            time.sleep(5)  # 如果出错，等待 5 秒后继续
     return search_results
