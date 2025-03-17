@@ -73,23 +73,23 @@ async def register(request: Request, body: RegisterRequest):
     if not recommended_articles_data:
         raise HTTPException(status_code=500, detail="推荐文章失败")
 
-    for article_data in recommended_articles_data:
-        # 检查文章是否已存在
-        article = await Article.get_or_none(link=article_data["url"])
-        if not article:
-            publish_date = datetime.now()
-            random_months = random.randint(1, 12)
-            random_days = random.randint(0,30)
-            fakeTime = publish_date - timedelta(days=random_months*30+random_days)
-            # 如果文章不存在，创建文章
-            article = await Article.create(
-                link=article_data["url"],
-                title=article_data.get("title"),
-                summary=article_data.get("summary"),
-                publish_date=fakeTime
-            )
-        # 绑定用户与文章
-        await user.recommended_articles.add(article)
+    # for article_data in recommended_articles_data:
+    #     # 检查文章是否已存在
+    #     article = await Article.get_or_none(link=article_data["url"])
+    #     if not article:
+    #         publish_date = datetime.now()
+    #         random_months = random.randint(1, 12)
+    #         random_days = random.randint(0,30)
+    #         fakeTime = publish_date - timedelta(days=random_months*30+random_days)
+    #         # 如果文章不存在，创建文章
+    #         article = await Article.create(
+    #             link=article_data["url"],
+    #             title=article_data.get("title"),
+    #             summary=article_data.get("summary"),
+    #             publish_date=fakeTime
+    #         )
+    #     # 绑定用户与文章
+    #     await user.recommended_articles.add(article)
     # 生成JWT token
     access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": str(user.id)}, expires_delta=access_token_expires)

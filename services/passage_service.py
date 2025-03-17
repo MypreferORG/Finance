@@ -106,8 +106,8 @@ def get_recommend_articles(user_info):
     print(f'用户信息：{user_info}')
     try:
         response = Application.call(
-            api_key=os.getenv("DASHSCOPE_API_KEY"),
-            app_id='sk-ba60782b21b2488285776a2dcb340cc1',
+            api_key='sk-ba60782b21b2488285776a2dcb340cc1',
+            app_id='6691e60b12544acaac0a0bd0416f8864',
             prompt=user_info
         )
 
@@ -122,12 +122,15 @@ def get_recommend_articles(user_info):
             search_keywords = match.group(1).strip().replace('\n', '')
             search_keywords = json.loads(search_keywords)
             print(f"推荐关键词: {search_keywords}")
-            return search_keywords
+            articlas = search_articles_by_keywords(search_keywords['keywords'])
+            return articlas
         else:
-            return default_keywords  # 返回默认关键词
+            articlas = search_articles_by_keywords(default_keywords)
+            return  articlas # 返回默认关键词
     except Exception as e:
         print(f"API 调用异常: {e}")
-        return default_keywords  # 返回默认关键词
+        articlas = search_articles_by_keywords(default_keywords)
+        return articlas  # 返回默认关键词
 
     # print(f'用户信息：{user_info}')
     # response = Application.call(

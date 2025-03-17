@@ -45,7 +45,7 @@ class UserAuth(Model):
 
     # 新增字段：用户与文章的关联关系（推荐文章）
     recommended_articles = fields.ManyToManyField(
-        "models.Article", related_name="recommended_users", description="用户推荐的文章"
+        "finance.Article", related_name="user_recommended_articles", description="用户推荐的文章"
     )
 
     class Meta:

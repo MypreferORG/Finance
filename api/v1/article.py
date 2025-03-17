@@ -6,7 +6,7 @@
 """
 import random
 from datetime import datetime, timedelta
-from decimal import Decimal
+# from decimal import Decimal
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends
 from models import Article
@@ -46,6 +46,7 @@ async def list_articles(user: UserAuth = Depends(user_required)):
 #     articles = sorted(articles, key=lambda x: x.publish_date, reverse=True)
 #
 #     return articles  # 返回匹配的文章摘要信息
+
 
 @router.get("/search/{query}", summary="搜索文章", response_model=List[ArticleAbstractResponse])
 async def search_article(query: str):
@@ -131,8 +132,9 @@ async def recommend_articles(
         if not article:
             publish_date = datetime.now()
             random_months = random.randint(1, 12)
-            random_days = random.randint(0,30)
-            fakeTime = publish_date - timedelta(days=random_months*30+random_days)
+            random_days = random.randint(0, 30)
+            fakeTime = publish_date - \
+                timedelta(days=random_months*30+random_days)
             # 如果文章不存在，创建文章
             article = await Article.create(
                 link=article_data["url"],

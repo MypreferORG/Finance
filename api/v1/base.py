@@ -18,7 +18,11 @@ user_api_router = APIRouter(
 user_api_router.include_router(auth.router, prefix="/auth", tags=["用户认证"])
 user_api_router.include_router(user.router, prefix="/user", tags=["用户信息"])
 user_api_router.include_router(loan.router, prefix="/loan", tags=["贷款功能"])
-user_api_router.include_router(notification.router, prefix="/notification", tags=["通知功能"])
-user_api_router.include_router(article.router, prefix="/article", tags=["文章功能"])
-user_api_router.include_router(announcement.router, prefix="/announcement", tags=["公告功能"])
-user_api_router.include_router(support.router, prefix="/support", tags=["客服功能"])
+user_api_router.include_router(
+    notification.router, prefix="/notification", tags=["通知功能"])
+user_api_router.include_router(
+    article.router, prefix="/article", tags=["文章功能"])
+user_api_router.include_router(
+    announcement.router, prefix="/announcement", tags=["公告功能"])
+user_api_router.include_router(
+    support.router, prefix="/support", tags=["客服功能"])

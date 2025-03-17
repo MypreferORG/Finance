@@ -41,8 +41,8 @@ class Article(Model):
     publish_date = fields.DatetimeField(auto_now_add=True, description="记录时间")  # 记录链接的存储时间
     summary = fields.TextField(null=True, description="文章摘要或简介")
     recommend_users = fields.ManyToManyField(
-            "models.UserAuth",
-            related_name="recommended_articles",
+            "finance.UserAuth",
+            related_name="article_recommend_users",
             description="推荐该文章的用户"
     )
 
