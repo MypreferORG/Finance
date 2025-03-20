@@ -4,15 +4,14 @@
 # @Author : Myprefer
 # @Des: 用户注册、登录相关接口
 """
-import random
 import re
-from datetime import timedelta, datetime
+from datetime import timedelta
 from typing import Union
 from fastapi import APIRouter, HTTPException, Request, Depends
 from config import settings
 from core.dependences import get_current_user
 from db.redis import sys_cache
-from models import UserAuth, UserProfile, UserSignLog, UserApplication, UserBehavior, Article
+from models import UserAuth, UserProfile, UserSignLog, UserApplication, UserBehavior
 from core.Auth import verify_password, create_access_token, get_password_hash
 from schemas.auth import SendVerificationCodeRequest
 from services.passage_service import get_recommend_articles

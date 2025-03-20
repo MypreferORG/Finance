@@ -11,7 +11,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Depends
 from models import Article
 from models.user import UserProfile, UserApplication, UserBehavior
-from schemas import ArticleResponse, ArticleAbstractResponse
+from schemas import ArticleAbstractResponse
 from core.dependences import user_required, UserAuth
 from services.passage_service import get_user_info, get_recommend_articles
 
@@ -57,8 +57,14 @@ async def search_article(query: str):
     """
     # 使用数据库查询优化搜索逻辑
     articles = await Article.filter(
-        title__icontains=query  # 搜索标题中包含关键词的文章
+        title__icontains=query,  # 搜索标题中包含关键词的文章
     ).order_by('-publish_date').limit(20)
+
+    articles2 = await Article.filter(
+        summary__icontains=query,  # 搜索摘要中包含关键词的文章
+    ).order_by('-publish_date').limit(20)
+
+    articles = articles + articles2
 
     if not articles:
         raise HTTPException(status_code=404, detail="未找到相关文章")
@@ -66,18 +72,18 @@ async def search_article(query: str):
     return articles
 
 
-@router.get("/read/{article_id}", summary="查看文章", response_model=ArticleResponse)
-async def read_article(article_id: int):
-    """
-    查看文章逻辑
-    :param article_id:
-    """
-    article = await Article.get_or_none(id=article_id)
+# @router.get("/read/{article_id}", summary="查看文章", response_model=ArticleResponse)
+# async def read_article(article_id: int):
+#     """
+#     查看文章逻辑
+#     :param article_id:
+#     """
+#     article = await Article.get_or_none(id=article_id)
 
-    if not article:
-        raise HTTPException(status_code=404, detail="文章未找到")
+#     if not article:
+#         raise HTTPException(status_code=404, detail="文章未找到")
 
-    return article
+#     return article
 
 # @router.get("/recommend", summary="推荐文章")
 # async def recommend_articles(

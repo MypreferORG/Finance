@@ -2,7 +2,7 @@
 """
 # @Create on : 2024/11/24 22:03
 # @Author : Myprefer
-# @Des: 
+# @Des: 身份证验证服务
 """
 import json
 import os

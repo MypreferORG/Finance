@@ -5,7 +5,6 @@
 # @Des: 个人信息管理相关接口
 """
 from datetime import date
-import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 
 from api.v1.article import recommend_articles
@@ -14,7 +13,6 @@ from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityReq
 from core.dependences import user_required
 from schemas.user import BindBankAccountRequest
 from services.identity_service import is_valid_id_card, verify_id_card_photo, verify_identity_with_third_party
-from tempfile import NamedTemporaryFile
 
 from utils.save import save_idcard_photo
 

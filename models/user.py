@@ -4,8 +4,6 @@
 # @Author : Myprefer
 # @Des: 用户模型
 """
-from datetime import date
-
 from tortoise import fields
 from tortoise.models import Model
 # from .article import Article

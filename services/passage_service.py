@@ -10,13 +10,11 @@
 # -> get_user_info -> model_to_description_dict
 import time
 import json
-import os
 import re
 from http import HTTPStatus
 from dashscope import Application
 from datetime import datetime
 from decimal import Decimal
-import duckduckgo_search
 from duckduckgo_search import DDGS
 from duckduckgo_search.exceptions import DuckDuckGoSearchException
 
@@ -168,7 +166,7 @@ def search_articles_by_keywords(keywords):
     ddgs = DDGS()  # 创建 DDGS 实例
     for keyword in keywords:
         try:
-            results = ddgs.text(keyword, max_results=3)  # 每个关键词返回 3 条结果
+            results = ddgs.text(keyword, max_results=1)  # 每个关键词返回 3 条结果
             for result in results:
                 search_results.append({
                     "title": result.get("title", "无标题"),

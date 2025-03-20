@@ -92,7 +92,7 @@ class ArticleResponse(BaseModel):
 
 class ArticleAbstractResponse(BaseModel):
     id: int
-    url: HttpUrl  # 使用 HttpUrl 类型确保链接合法性
+    link: HttpUrl  # 使用 HttpUrl 类型确保链接合法性
     title: Optional[str] = None
     summary: Optional[str] = None
     publish_date: datetime
