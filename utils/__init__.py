@@ -6,3 +6,5 @@
 """
 
 from .random import random_str
+from .save import save_idcard_photo
+from .model2dict import model_to_description_dict

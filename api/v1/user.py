@@ -6,15 +6,19 @@
 """
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+import requests
 
 from api.v1.article import recommend_articles
 from models import UserAuth, UserProfile
+from models.user import UserApplication, UserBehavior
 from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
 from core.dependences import user_required
 from schemas.user import BindBankAccountRequest
-from services.identity_service import is_valid_id_card, verify_id_card_photo, verify_identity_with_third_party
+# from services.identity_service import is_valid_id_card, verify_id_card_photo, verify_identity_with_third_party
 
+from utils.model2dict import model_to_raw_dict
 from utils.save import save_idcard_photo
+import asyncio
 
 router = APIRouter()
 
@@ -57,9 +61,16 @@ async def update_profile(request: UpdateProfileRequest, user: UserAuth = Depends
     }
     for field in update_fields:
         setattr(user_profile, field, update_fields[field])
+
+    credit_score = await get_credit_score(user=user)
+
+    # 更新信用分
+    user_profile.credit = credit_score.get("credit_score")
     await user_profile.save()
+    print(f"用户信用分：{credit_score}")
+
     # 调用推荐文章逻辑
-    await recommend_articles(user=user)
+    # asyncio.create_task(recommend_articles(user=user))
 
     return user_profile
 
@@ -93,8 +104,9 @@ async def bind_identity(
         raise HTTPException(status_code=400, detail="用户已完成实名认证")
 
     # 验证身份证号码格式
-    if not is_valid_id_card(id_card_number):
-        raise HTTPException(status_code=402, detail="身份证号码格式错误")
+    # print(f"身份证号码：{id_card_number}")
+    # if not is_valid_id_card(id_card_number):
+    #     raise HTTPException(status_code=402, detail="身份证号码格式错误")
 
     # 检查身份证有效期是否过期
     if id_card_expiry < date.today():
@@ -130,7 +142,7 @@ async def bind_identity(
     await user_profile.save()
 
     # 调用推荐文章逻辑
-    await recommend_articles(user=user)
+    # await recommend_articles(user=user)
 
     return {
         "success": True,
@@ -245,3 +257,69 @@ async def bind_bankcard(request: BindBankAccountRequest, user: UserAuth = Depend
 #     # 手机号换绑逻辑
 #     # todo: bind_phone 手机号换绑逻辑
 #     pass
+
+
+@router.get("/credit", summary="获取信用分")
+async def get_credit_score(user: UserAuth = Depends(user_required)):
+    """
+    获取用户信用分逻辑
+    :param user: UserAuth
+    :return:
+    """
+    # 查询用户信用分
+    user_profile = await UserProfile.get_or_none(user=user)
+    user_application = await UserApplication.get_or_none(user=user)
+    user_behavior = await UserBehavior.get_or_none(user=user)
+    if not user_profile or not user_application or not user_behavior:
+        raise HTTPException(status_code=404, detail="用户未找到")
+    key2remove = ['user']
+    user_info = {}
+    user_info.update(model_to_raw_dict(user_application, key2remove))
+    user_info.update(model_to_raw_dict(user_behavior, key2remove))
+
+    info_str = ''
+    for key, value in user_info.items():
+        if value is None:
+            info_str += ","
+        else:
+            info_str += str(value) + ","
+    info_str = info_str[:-1]  # 去掉最后一个逗号
+    print(f"用户信息：{info_str}")
+    # 使用requests库发送用户信息到外部API
+    
+    try:
+        response = requests.get(f'http://127.0.0.1:8001/predict/{info_str}', timeout=10)
+        response.raise_for_status()  # 检查HTTP错误
+        
+        credit_data = response.json()
+        predictions_a = credit_data.get("predictions_a", [])
+        predictions_b = credit_data.get("predictions_b", [])
+        # 处理预测结果
+        prob_a = predictions_a[0][0] if predictions_a else 0.5
+        prob_b = predictions_b[0][0] if predictions_b else 0.5
+
+        result = predictions_a[0][1] and predictions_b[0][1]
+
+        # 计算信用分（假设范围在300到850之间）
+        credit_score = int((prob_a + prob_b) / 2 * 850)  # 示例计算公式
+        # credit_score = int(prob_a * 850)  # 示例计算公式
+        # credit_score = int(prob_b * 850)  # 示例计算公式
+
+        # credit_score = credit_data.get("credit_score", 650)  # 默认值为650
+        
+        # 更新用户信用分数据
+        user_profile.credit_score = credit_score
+        await user_profile.save()
+        
+        return {
+            "credit_score": credit_score,
+            "result": result,
+            "updated_at": user_profile.updated_at,
+        }
+    except requests.RequestException as e:
+        # 记录错误，返回默认或缓存的信用分
+        print(f"信用分API请求错误: {str(e)}")
+        return {
+            "credit_score": user_profile.credit or 200,
+            "error": "无法连接到信用评分服务"
+        }

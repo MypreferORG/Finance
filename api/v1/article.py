@@ -6,7 +6,6 @@
 """
 import random
 from datetime import datetime, timedelta
-# from decimal import Decimal
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends
 from models import Article

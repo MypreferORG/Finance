@@ -9,6 +9,7 @@ import json
 from decimal import Decimal
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
+from api.v1.user import get_credit_score
 from core.dependences import admin_required, user_required
 from models import UserAuth, UserProfile, LoanRecord, InterestRate, RepaymentRecord
 from schemas import (LoanApplicationResponse,
@@ -63,10 +64,25 @@ async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(u
     loaned_amount = user_profile.loaned_amount
     if request.amount <= 0 or request.amount >= user_profile.max_amount or amount + loaned_amount > user_profile.max_amount:
         raise HTTPException(status_code=400, detail="借款金额异常")
+    
+    credit_score = await get_credit_score(user=user)
+    # print(f"用户信用分：{credit_score}")
+
+    # 更新信用分
+    user_profile.credit = credit_score.get("credit_score")
+    await user_profile.save()
+    
+    if user_profile.income < amount * Decimal('0.1'):
+        credit_score["result"] = 0
+    
+    if credit_score.get("result") == 0:
+        raise HTTPException(status_code=400, detail="无法申请贷款")
+    
 
     # 查询当前利率
     current_interest_rate = await InterestRate.first()
-    current_interest_rate = current_interest_rate.interest_rate
+    print(f"当前利率：{current_interest_rate}")
+    current_interest_rate = current_interest_rate.interest_rate if current_interest_rate else decimal.Decimal(0.05)
 
     repayment_schedule = generate_repayment_schedule(amount=request.amount,
                                                      loan_term=request.loan_term,
@@ -250,7 +266,7 @@ async def set_rate(rate: decimal.Decimal, user: UserAuth = Depends(admin_require
 
 
 @router.get("/rate/", summary="获取贷款利率")
-async def set_rate(rate: decimal.Decimal):
+async def get_rate(rate: decimal.Decimal):
     """
     获取贷款利率
     :return: 利率
@@ -279,7 +295,7 @@ async def get_loan_quota(user: UserAuth = Depends(user_required)):
 @router.get("/list/{status}",
             summary="查询不同状态的借款列表",
             response_model=List[LoanStatusResponse])
-async def loan_status(status: str, user: UserAuth = Depends(user_required)):
+async def query_loan_status(status: str, user: UserAuth = Depends(user_required)):
     """
     查询借款列表状态逻辑
     :param status: 贷款状态

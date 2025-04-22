@@ -167,7 +167,6 @@ class UserApplication(Model):
         table = "user_application"
         indexes = [("user",)]  # 针对用户编码创建索引
 
-
 class UserBehavior(Model):
     """
     B卡评分卡所需信息
