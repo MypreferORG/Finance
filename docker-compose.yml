@@ -3,15 +3,12 @@ services:
   finance1:
     image: crpi-d8fe432ldlewt4lj.cn-chengdu.personal.cr.aliyuncs.com/myprefer/finance:1.1.0
     network_mode: host  # 使用宿主机的网络
+    restart: always
+    volumes:
+      - ./:/app  # 将当前目录挂载到容器的 /app 目录
+      - ./cert:/etc/nginx/cert
+    environment:
+      - FASTAPI_PORT=8000
     # 启动
-    command: >
-      bash -c "echo MYSQL_USER=finance > /app/.env &&
-               echo MYSQL_PASSWORD=79sdiubfhsiojeio3 >> /app/.env &&
-               echo MYSQL_HOST=8.152.214.0 >> /app/.env &&
-               echo MYSQL_PORT=3306 >> /app/.env &&
-               echo MYSQL_DB=finance >> /app/.env &&
-               echo CACHE_HOST=8.152.214.0 >> /app/.env &&
-               echo CACHE_PORT=6379 >> /app/.env &&
-               echo CACHE_DB=0 >> /app/.env &&
-               echo FASTAPI_PORT=8000 >> /app/.env &&
-               exec python main.py"
+    command: ["python", "main.py"]
+
