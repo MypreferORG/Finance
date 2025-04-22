@@ -8,6 +8,7 @@ services:
     restart: always
     volumes:
       - ./:/app  # 将当前目录挂载到容器的 /app 目录
+      - ./cert:/etc/nginx/cert
     environment:
       - FASTAPI_PORT=8000
     # 启动

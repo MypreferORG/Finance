@@ -34,4 +34,6 @@ app.include_router(admin_api_router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=settings.FASTAPI_PORT)
+    # uvicorn.run(app, host="0.0.0.0", port=settings.FASTAPI_PORT)
+    uvicorn.run(app, host='0.0.0.0', port=settings.FASTAPI_PORT, ssl_keyfile="/etc/nginx/cert/myprefer.chat.key", ssl_certfile="/etc/nginx/cert/myprefer.chat.pem")
+
