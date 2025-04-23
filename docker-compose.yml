@@ -3,7 +3,7 @@ services:
   finance1:
     image: crpi-d8fe432ldlewt4lj.cn-chengdu.personal.cr.aliyuncs.com/myprefer/finance:1.1.0
     network_mode: host  # 使用宿主机的网络
-    restart: always
+    # restart: always
     volumes:
       - ./:/app  # 将当前目录挂载到容器的 /app 目录
       - ./cert:/etc/nginx/cert
