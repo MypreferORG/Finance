@@ -18,7 +18,7 @@ class LoanRecord(Model):
     amount = fields.DecimalField(max_digits=10, decimal_places=2, description="借款金额")
     interest_rate = fields.DecimalField(max_digits=5, decimal_places=2, description="年利率")
     loan_term = fields.IntField(description="贷款期限（以月为单位）")
-    status = fields.CharField(max_length=20, default="defaulted", description="贷款状态（如：active、completed、defaulted、overdue等）")
+    status = fields.CharField(max_length=20, default="defaulted", description="贷款状态（如：active、completed、defaulted、overdue、refused等）")
     repayment_method = fields.CharField(max_length=20, description="还款方式(等额本金/等额本息)")
     repayment_amount = fields.DecimalField(max_digits=10, decimal_places=2, default=0.00, description="已还款金额")
     repayment_schedule = fields.TextField(null=True, description="还款计划（如每期还款金额、还款日期等）")
