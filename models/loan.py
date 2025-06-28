@@ -24,6 +24,14 @@ class LoanRecord(Model):
     repayment_schedule = fields.TextField(null=True, description="还款计划（如每期还款金额、还款日期等）")
     usage = fields.CharField(max_length=50, description="借款用途")
     bank_account = fields.CharField(max_length=50, description="收款/还款银行账户")
+    
+    # 复审相关字段
+    income = fields.DecimalField(max_digits=10, decimal_places=2, null=True, description="申请人月收入")
+    credit_score = fields.IntField(null=True, description="信用评分")
+    auditor = fields.CharField(max_length=50, null=True, description="审核员")
+    audit_time = fields.DatetimeField(null=True, description="审核时间")
+    remark = fields.TextField(null=True, description="审核备注/拒绝原因")
+    
     created_at = fields.DatetimeField(auto_now_add=True, description="贷款申请时间")
     updated_at = fields.DatetimeField(auto_now=True, description="贷款信息更新时间")
 

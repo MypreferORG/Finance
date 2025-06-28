@@ -5,7 +5,7 @@
 # @Des: 
 """
 from fastapi import APIRouter
-from api.v2 import auth, user, loan, notification, article, announcement, support, repayment, charts
+from api.v2 import auth, user, loan, notification, article, announcement, support, repayment, charts, model, review
 
 
 # 创建一个APIRouter实例，用于统一管理所有管理API
@@ -23,4 +23,6 @@ admin_api_router.include_router(article.router, prefix="/article", tags=["文章
 admin_api_router.include_router(announcement.router, prefix="/announcement", tags=["公告管理"])
 # admin_api_router.include_router(support.router, prefix="/support", tags=["客户支持"])
 admin_api_router.include_router(charts.router, prefix="/charts", tags=["图表数据"])
+admin_api_router.include_router(model.router, prefix="/model", tags=["模型管理"])
+admin_api_router.include_router(review.router, prefix="/audit/review", tags=["复审管理"])
 

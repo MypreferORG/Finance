@@ -11,7 +11,7 @@ from services.data_for_charts_service import (
     get_numOfPeople
 )
 
-router = APIRouter(prefix="/charts", tags=["图表数据"])
+router = APIRouter(tags=["图表数据"])
 
 @router.get("/weekly-volume", response_model=List[float])
 async def get_weekly_volume():

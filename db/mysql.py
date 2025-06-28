@@ -66,7 +66,7 @@ async def register_mysql(app: FastAPI, database: str = 'mysql'):
             "finance": database_connection,
         },
         "apps": {
-            "finance": {"models": ["models.user", "models.loan", "models.article", "models.notification"],
+            "finance": {"models": ["models.user", "models.loan", "models.article", "models.notification", "models.model", "models.review"],
                         "default_connection": "finance"},
         },
         'use_tz': False,
