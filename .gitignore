@@ -6,3 +6,4 @@ __pycache__
 .idea/misc.xml
 .idea/Finance.iml
 uploads
+*.pth
