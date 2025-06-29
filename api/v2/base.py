@@ -2,7 +2,7 @@
 """
 # @Create on : 2024/11/13 13:07
 # @Author : Myprefer
-# @Des: 
+# @Des: API路由管理
 """
 from fastapi import APIRouter
 from api.v2 import auth, user, loan, notification, article, announcement, support, repayment, charts, model, review
