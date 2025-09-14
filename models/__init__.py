@@ -8,8 +8,10 @@
 from .article import Article, Announcement
 from .user import UserAuth, UserSignLog, UserApplication, UserBehavior, UserProfile
 from .loan import LoanRecord, RepaymentRecord, InterestRate
+from .model import AIModel
+from .review import ReviewApplication
 
 __all__ = ["Article", "Announcement", "UserAuth",
            "UserSignLog", "UserApplication", "UserBehavior", "UserProfile",
-           "LoanRecord", "RepaymentRecord", "InterestRate"]
+           "LoanRecord", "RepaymentRecord", "InterestRate", "AIModel", "ReviewApplication"]
 

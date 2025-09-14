@@ -65,18 +65,20 @@ async def apply_loan(request: LoanApplicationRequest, user: UserAuth = Depends(u
     if request.amount <= 0 or request.amount >= user_profile.max_amount or amount + loaned_amount > user_profile.max_amount:
         raise HTTPException(status_code=400, detail="借款金额异常")
     
-    credit_score = await get_credit_score(user=user)
-    # print(f"用户信用分：{credit_score}")
+    use_credit_score = 0
+    if use_credit_score:
+        credit_score = await get_credit_score(user=user)
+        # print(f"用户信用分：{credit_score}")
 
-    # 更新信用分
-    user_profile.credit = credit_score.get("credit_score")
-    await user_profile.save()
-    
-    if user_profile.income < amount * Decimal('0.1'):
-        credit_score["result"] = 0
-    
-    if credit_score.get("result") == 0:
-        raise HTTPException(status_code=400, detail="无法申请贷款")
+        # 更新信用分
+        user_profile.credit = credit_score.get("credit_score")
+        await user_profile.save()
+        
+        if user_profile.income < amount * Decimal('0.1'):
+            credit_score["result"] = 0
+        
+        if credit_score.get("result") == 0:
+            raise HTTPException(status_code=400, detail="无法申请贷款")
     
 
     # 查询当前利率
