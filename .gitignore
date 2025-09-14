@@ -1,4 +1,3 @@
-文档
 .idea
 .gitignore
 __pycache__
@@ -7,3 +6,4 @@ __pycache__
 .idea/Finance.iml
 uploads
 *.pth
+docs

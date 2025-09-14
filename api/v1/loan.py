@@ -17,6 +17,7 @@ from schemas import (LoanApplicationResponse,
                      LoanStatusResponse,
                      RepaymentPlanResponse,
                      RepaymentRequest,
+                     RepaymentResponse,
                      RepaymentPlan,
                      RepaymentPlanInfo)
 from schemas.loan import LoanQuotaResponse
@@ -316,3 +317,35 @@ async def query_loan_status(status: str, user: UserAuth = Depends(user_required)
     loans = await LoanRecord.filter(user=user, status=status).order_by("-created_at")
 
     return loans
+
+
+@router.get("/repayment-history/{loan_id}", summary="查询还款记录", response_model=List[RepaymentResponse])
+async def get_repayment_history(loan_id: int, user: UserAuth = Depends(user_required)):
+    """
+    查询还款记录逻辑
+    :param loan_id: 贷款记录id
+    :param user: 当前登录用户
+    :return: 还款记录列表
+    """
+    # 检查贷款记录是否存在
+    loan = await LoanRecord.get_or_none(id=loan_id)
+    if not loan:
+        raise HTTPException(status_code=404, detail="贷款记录未找到")
+    
+    # 权限检查
+    if loan.user_id != user.index and (user.role != 'admin' and user.role != 'root'):
+        raise HTTPException(status_code=401, detail="无权查看该记录")
+    
+    # 查询还款记录
+    repayment_records = await RepaymentRecord.filter(loan_id=loan_id).order_by("-created_at")
+    
+    return [
+        {
+            "id": record.id,
+            "loan_id": record.loan_id,
+            "amount": record.amount,
+            "repayment_date": record.created_at,
+            "status": record.status
+        }
+        for record in repayment_records
+    ]
