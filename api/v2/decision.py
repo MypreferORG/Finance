@@ -16,7 +16,8 @@ from schemas.decision import (
     TestCase, TestResponse,
     ExecutionHistoryResponse, ExecutionHistoryList,
     StatisticsResponse, SuccessResponse, ErrorResponse,
-    RuleStatusUpdate, RuleStatusResponse, BatchStatusUpdate, BatchStatusResponse
+    RuleStatusUpdate, RuleStatusResponse, BatchStatusUpdate, BatchStatusResponse,
+    TestCaseCreate, TestCaseUpdate, TestCaseResponse, TestCaseList
 )
 from services.decision_service import DecisionEngineService
 
@@ -262,6 +263,93 @@ async def get_statistics():
     try:
         stats = await DecisionEngineService.get_statistics()
         return SuccessResponse(data=stats, message="获取成功")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 测试用例管理接口
+@router.get("/test-cases", response_model=SuccessResponse, summary="获取测试用例列表")
+async def get_test_cases(
+    skip: int = Query(0, ge=0, description="跳过记录数"),
+    limit: int = Query(100, ge=1, le=1000, description="每页记录数"),
+    keyword: Optional[str] = Query(None, description="关键字搜索")
+):
+    """获取测试用例列表，支持分页和筛选"""
+    try:
+        test_cases, total = await DecisionEngineService.get_test_cases(skip, limit, keyword)
+        
+        test_case_list = TestCaseList(
+            data=[TestCaseResponse.from_orm(test_case) for test_case in test_cases],
+            total=total,
+            skip=skip,
+            limit=limit
+        )
+        
+        return SuccessResponse(data=test_case_list.dict(), message="获取成功")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/test-cases", response_model=SuccessResponse, summary="创建测试用例")
+async def create_test_case(test_case_data: TestCaseCreate):
+    """创建新的测试用例"""
+    try:
+        test_case = await DecisionEngineService.create_test_case(test_case_data)
+        return SuccessResponse(
+            data=TestCaseResponse.from_orm(test_case).dict(),
+            message="创建成功"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/test-cases/{test_case_id}", response_model=SuccessResponse, summary="获取测试用例详情")
+async def get_test_case(test_case_id: int):
+    """获取指定测试用例的详细信息"""
+    try:
+        test_case = await DecisionEngineService.get_test_case(test_case_id)
+        if not test_case:
+            raise HTTPException(status_code=404, detail="测试用例不存在")
+            
+        return SuccessResponse(
+            data=TestCaseResponse.from_orm(test_case).dict(),
+            message="获取成功"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/test-cases/{test_case_id}", response_model=SuccessResponse, summary="更新测试用例")
+async def update_test_case(test_case_id: int, test_case_data: TestCaseUpdate):
+    """更新指定测试用例"""
+    try:
+        test_case = await DecisionEngineService.update_test_case(test_case_id, test_case_data)
+        if not test_case:
+            raise HTTPException(status_code=404, detail="测试用例不存在")
+            
+        return SuccessResponse(
+            data=TestCaseResponse.from_orm(test_case).dict(),
+            message="更新成功"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/test-cases/{test_case_id}", response_model=SuccessResponse, summary="删除测试用例")
+async def delete_test_case(test_case_id: int):
+    """删除指定测试用例"""
+    try:
+        success = await DecisionEngineService.delete_test_case(test_case_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="测试用例不存在")
+            
+        return SuccessResponse(message="删除成功")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

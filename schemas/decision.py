@@ -55,6 +55,9 @@ class Position(BaseModel):
     x: float
     y: float
 
+    class Config:
+        extra = "allow"  # 允许额外字段
+
 
 class RuleNode(BaseModel):
     """规则节点"""
@@ -62,6 +65,9 @@ class RuleNode(BaseModel):
     type: NodeType
     position: Position
     data: Dict[str, Any]
+
+    class Config:
+        extra = "allow"  # 允许额外字段
 
 
 class RuleEdge(BaseModel):
@@ -71,6 +77,13 @@ class RuleEdge(BaseModel):
     target: str
     type: Optional[str] = "default"
     data: Optional[Dict[str, Any]] = None
+    animated: Optional[bool] = None
+    style: Optional[Dict[str, Any]] = None
+    sourceHandle: Optional[str] = None
+    targetHandle: Optional[str] = None
+
+    class Config:
+        extra = "allow"  # 允许额外字段
 
 
 class RuleVariable(BaseModel):
@@ -210,6 +223,50 @@ class TestCase(BaseModel):
     name: str
     input_data: Dict[str, Any]
     expected_result: Dict[str, Any]
+
+
+class TestCaseCreate(BaseModel):
+    """创建测试用例"""
+    name: str
+    description: Optional[str] = None
+    input_data: Dict[str, Any]
+    expected_result: str
+    rule_id: Optional[str] = None
+
+
+class TestCaseUpdate(BaseModel):
+    """更新测试用例"""
+    name: str
+    description: Optional[str] = None
+    input_data: Dict[str, Any]
+    expected_result: str
+
+
+class TestCaseResponse(BaseModel):
+    """测试用例响应"""
+    id: int
+    rule_id: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    input_data: Dict[str, Any]
+    expected_result: str
+    actual_result: Optional[Dict[str, Any]] = None
+    status: Optional[TestStatus] = None
+    match_expected: Optional[bool] = None
+    execution_time: Optional[float] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TestCaseList(BaseModel):
+    """测试用例列表响应"""
+    data: List[TestCaseResponse]
+    total: int
+    skip: int
+    limit: int
 
 
 class TestCaseResult(BaseModel):
