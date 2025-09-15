@@ -65,11 +65,12 @@ class DecisionExecution(Model):
 
 class DecisionTestCase(Model):
     """决策测试用例模型"""
-    id = fields.IntField(pk=True)
-    rule_id = fields.CharField(max_length=50, description="规则ID")
+    id = fields.IntField(pk=True, description="测试用例ID")
+    rule_id = fields.CharField(max_length=50, null=True, description="关联规则ID")
     name = fields.CharField(max_length=100, description="测试用例名称")
+    description = fields.TextField(null=True, description="测试用例描述")
     input_data = fields.JSONField(description="测试输入数据")
-    expected_result = fields.JSONField(description="期望结果")
+    expected_result = fields.CharField(max_length=50, description="期望结果")
     actual_result = fields.JSONField(null=True, description="实际结果")
     status = fields.CharField(
         max_length=20, 

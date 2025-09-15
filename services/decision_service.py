@@ -18,7 +18,8 @@ from models.decision import DecisionRule, DecisionExecution, DecisionTestCase, D
 from schemas.decision import (
     DecisionRuleCreate, DecisionRuleUpdate, RuleValidationRequest,
     ExecutionRequest, TestCase, RuleStatus, ExecutionStatus, NodeType,
-    RuleStatusUpdate, BatchStatusUpdate, BatchUpdateResult
+    RuleStatusUpdate, BatchStatusUpdate, BatchUpdateResult,
+    TestCaseCreate, TestCaseUpdate
 )
 from pydantic import BaseModel
 from enum import Enum
@@ -333,7 +334,7 @@ class DecisionEngineService:
 
     @staticmethod
     async def _execute_rule_logic(rule: DecisionRule, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """TODO: 执行规则逻辑"""
+        """执行规则逻辑"""
         nodes = rule.nodes
         edges = rule.edges
         
@@ -750,3 +751,67 @@ class DecisionEngineService:
         )
         
         await global_stats.save()
+
+    # 测试用例管理方法
+    @staticmethod
+    async def get_test_cases(skip: int = 0, limit: int = 100, 
+                           keyword: Optional[str] = None) -> Tuple[List[DecisionTestCase], int]:
+        """获取测试用例列表"""
+        query = DecisionTestCase.all()
+        
+        if keyword:
+            query = query.filter(
+                Q(name__icontains=keyword) | 
+                Q(description__icontains=keyword)
+            )
+            
+        total = await query.count()
+        test_cases = await query.offset(skip).limit(limit).order_by('-created_at')
+        
+        return test_cases, total
+
+    @staticmethod
+    async def create_test_case(test_case_data: TestCaseCreate) -> DecisionTestCase:
+        """创建测试用例"""
+        # 序列化输入数据
+        serialized_input_data = DecisionEngineService._to_serializable(test_case_data.input_data)
+        test_case = await DecisionTestCase.create(
+            rule_id=test_case_data.rule_id,
+            name=test_case_data.name,
+            description=test_case_data.description,
+            input_data=serialized_input_data,
+            expected_result=test_case_data.expected_result
+        )
+        return test_case
+
+    @staticmethod
+    async def get_test_case(test_case_id: int) -> Optional[DecisionTestCase]:
+        """获取测试用例详情"""
+        return await DecisionTestCase.get_or_none(id=test_case_id)
+
+    @staticmethod
+    async def update_test_case(test_case_id: int, test_case_data: TestCaseUpdate) -> Optional[DecisionTestCase]:
+        """更新测试用例"""
+        test_case = await DecisionTestCase.get_or_none(id=test_case_id)
+
+        if not test_case:
+            return None
+            
+        # 序列化更新数据
+        test_case.name = test_case_data.name
+        test_case.description = test_case_data.description
+        test_case.input_data = DecisionEngineService._to_serializable(test_case_data.input_data)
+        test_case.expected_result = test_case_data.expected_result
+        
+        await test_case.save()
+        return test_case
+
+    @staticmethod
+    async def delete_test_case(test_case_id: int) -> bool:
+        """删除测试用例"""
+        test_case = await DecisionTestCase.get_or_none(id=test_case_id)
+        if not test_case:
+            return False
+            
+        await test_case.delete()
+        return True
