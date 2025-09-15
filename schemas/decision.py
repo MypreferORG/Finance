@@ -278,6 +278,45 @@ class StatisticsResponse(BaseModel):
     recent_executions: List[RecentExecution]
 
 
+# 状态更新相关Schema
+class RuleStatusUpdate(BaseModel):
+    """规则状态更新请求"""
+    status: RuleStatus
+
+
+class RuleStatusResponse(BaseModel):
+    """规则状态更新响应"""
+    id: str
+    name: str
+    status: RuleStatus
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BatchStatusUpdate(BaseModel):
+    """批量状态更新请求"""
+    rule_ids: List[str]
+    status: RuleStatus
+
+
+class BatchUpdateResult(BaseModel):
+    """批量更新单个结果"""
+    id: str
+    name: Optional[str] = None
+    status: Optional[RuleStatus] = None
+    error: Optional[str] = None
+
+
+class BatchStatusResponse(BaseModel):
+    """批量状态更新响应"""
+    updated_count: int
+    failed_count: int
+    updated_rules: List[BatchUpdateResult]
+    failed_rules: List[BatchUpdateResult]
+
+
 # 通用响应模型
 class BaseResponse(BaseModel):
     """基础响应模型"""

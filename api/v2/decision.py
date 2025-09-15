@@ -15,7 +15,8 @@ from schemas.decision import (
     ExecutionRequest, ExecutionResponse,
     TestCase, TestResponse,
     ExecutionHistoryResponse, ExecutionHistoryList,
-    StatisticsResponse, SuccessResponse, ErrorResponse
+    StatisticsResponse, SuccessResponse, ErrorResponse,
+    RuleStatusUpdate, RuleStatusResponse, BatchStatusUpdate, BatchStatusResponse
 )
 from services.decision_service import DecisionEngineService
 
@@ -103,7 +104,68 @@ async def delete_rule(rule_id: str):
         if not success:
             raise HTTPException(status_code=404, detail="规则不存在")
             
-        return SuccessResponse(data=None, message="删除成功")
+        return SuccessResponse(message="删除成功")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/rules/{rule_id}/status", response_model=SuccessResponse, summary="更新规则状态")
+async def update_rule_status(rule_id: str, status_update: RuleStatusUpdate):
+    """更新指定规则的状态"""
+    try:
+        rule = await DecisionEngineService.update_rule_status(rule_id, status_update)
+        if not rule:
+            raise HTTPException(status_code=404, detail="规则不存在")
+            
+        response_data = RuleStatusResponse(
+            id=rule.id,
+            name=rule.name,
+            status=rule.status,
+            updated_at=rule.updated_at
+        )
+        
+        return SuccessResponse(
+            data=response_data.dict(),
+            message="状态更新成功"
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/rules/batch/status", response_model=SuccessResponse, summary="批量更新规则状态")
+async def batch_update_rule_status(batch_update: BatchStatusUpdate):
+    """批量更新多个规则的状态"""
+    try:
+        if not batch_update.rule_ids:
+            raise HTTPException(status_code=400, detail="规则ID列表不能为空")
+            
+        result = await DecisionEngineService.batch_update_rule_status(batch_update)
+        
+        response_data = BatchStatusResponse(
+            updated_count=result["updated_count"],
+            failed_count=result["failed_count"],
+            updated_rules=result["updated_rules"],
+            failed_rules=result["failed_rules"]
+        )
+        
+        # 根据结果确定消息
+        if result["failed_count"] == 0:
+            message = "批量状态更新成功"
+        elif result["updated_count"] == 0:
+            message = "批量状态更新失败"
+        else:
+            message = "批量状态更新部分成功"
+            
+        return SuccessResponse(
+            data=response_data.dict(),
+            message=message
+        )
     except HTTPException:
         raise
     except Exception as e:

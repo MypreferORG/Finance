@@ -17,7 +17,8 @@ from tortoise.transactions import in_transaction
 from models.decision import DecisionRule, DecisionExecution, DecisionTestCase, DecisionStatistics
 from schemas.decision import (
     DecisionRuleCreate, DecisionRuleUpdate, RuleValidationRequest,
-    ExecutionRequest, TestCase, RuleStatus, ExecutionStatus, NodeType
+    ExecutionRequest, TestCase, RuleStatus, ExecutionStatus, NodeType,
+    RuleStatusUpdate, BatchStatusUpdate, BatchUpdateResult
 )
 from pydantic import BaseModel
 from enum import Enum
@@ -105,6 +106,55 @@ class DecisionEngineService:
             
         await rule.delete()
         return True
+
+    @staticmethod
+    async def update_rule_status(rule_id: str, status_update: RuleStatusUpdate) -> Optional[DecisionRule]:
+        """更新规则状态"""
+        rule = await DecisionRule.get_or_none(id=rule_id)
+        if not rule:
+            return None
+            
+        rule.status = status_update.status.value
+        await rule.save()
+        return rule
+
+    @staticmethod
+    async def batch_update_rule_status(batch_update: BatchStatusUpdate) -> Dict[str, Any]:
+        """批量更新规则状态"""
+        updated_rules = []
+        failed_rules = []
+        
+        for rule_id in batch_update.rule_ids:
+            try:
+                rule = await DecisionRule.get_or_none(id=rule_id)
+                if not rule:
+                    failed_rules.append(BatchUpdateResult(
+                        id=rule_id,
+                        error="规则不存在或已被删除"
+                    ))
+                    continue
+                    
+                rule.status = batch_update.status.value
+                await rule.save()
+                
+                updated_rules.append(BatchUpdateResult(
+                    id=rule.id,
+                    name=rule.name,
+                    status=RuleStatus(rule.status)
+                ))
+                
+            except Exception as e:
+                failed_rules.append(BatchUpdateResult(
+                    id=rule_id,
+                    error=str(e)
+                ))
+                
+        return {
+            "updated_count": len(updated_rules),
+            "failed_count": len(failed_rules),
+            "updated_rules": updated_rules,
+            "failed_rules": failed_rules
+        }
 
     @staticmethod
     def validate_rule(validation_data: RuleValidationRequest) -> Dict[str, Any]:
@@ -283,7 +333,7 @@ class DecisionEngineService:
 
     @staticmethod
     async def _execute_rule_logic(rule: DecisionRule, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """执行规则逻辑"""
+        """TODO: 执行规则逻辑"""
         nodes = rule.nodes
         edges = rule.edges
         
@@ -411,7 +461,7 @@ class DecisionEngineService:
                     eval_condition = eval_condition.replace(key, str(value))
                     
             # 替换操作符
-            eval_condition = eval_condition.replace('&&', ' and ').replace('||', ' or ').replace('!', ' not ')
+            eval_condition = eval_condition.replace('&&', ' and ').replace('||', ' or ').replace('!', ' not ').replace('true', 'True').replace('false', 'False')
             
             # 安全评估
             allowed_names = {"__builtins__": {}, "True": True, "False": False, "None": None}
@@ -670,7 +720,7 @@ class DecisionEngineService:
             
         # 更新平均执行时间
         stats.avg_execution_time = (
-            (stats.avg_execution_time * (stats.total_executions - 1) + execution_time) / 
+            (float(stats.avg_execution_time) * (stats.total_executions - 1) + execution_time) / 
             stats.total_executions
         )
         
@@ -695,7 +745,7 @@ class DecisionEngineService:
             global_stats.failed_executions += 1
             
         global_stats.avg_execution_time = (
-            (global_stats.avg_execution_time * (global_stats.total_executions - 1) + execution_time) / 
+            (float(global_stats.avg_execution_time) * (global_stats.total_executions - 1) + execution_time) / 
             global_stats.total_executions
         )
         

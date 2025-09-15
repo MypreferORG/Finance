@@ -5,7 +5,8 @@
 # @Des: API路由管理
 """
 from fastapi import APIRouter
-from api.v2 import auth, user, loan, notification, article, announcement, support, repayment, charts, model, review, decision
+from api.v2 import auth, user, loan, notification, article,\
+      announcement, support, repayment, charts, model, review, decision
 
 
 # 创建一个APIRouter实例，用于统一管理所有管理API
@@ -26,4 +27,5 @@ admin_api_router.include_router(charts.router, prefix="/charts", tags=["图表�
 admin_api_router.include_router(model.router, prefix="/model", tags=["模型管理"])
 admin_api_router.include_router(review.router, prefix="/audit/review", tags=["复审管理"])
 admin_api_router.include_router(decision.router, prefix="/decision-engine", tags=["决策引擎"])
+
 

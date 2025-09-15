@@ -21,7 +21,7 @@ class DecisionRule(Model):
     variables = fields.JSONField(description="规则变量数据")
     status = fields.CharField(
         max_length=20, 
-        default="draft", 
+        default="active", 
         description="规则状态: draft/active/inactive"
     )
     version = fields.CharField(max_length=20, default="1.0.0", description="版本号")
