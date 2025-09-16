@@ -422,7 +422,7 @@ class DecisionEngineService:
             
         elif node_type == "decision":
             # 决策节点：生成最终决策
-            approval_condition = node_data.get("approvalCondition", "true")
+            approval_condition = node_data.get("result", "false")
             max_amount = node_data.get("maxAmount", 50000)
             
             approved = DecisionEngineService._evaluate_condition(approval_condition, context)
