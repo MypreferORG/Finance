@@ -11,9 +11,12 @@ from .loan import LoanRecord, RepaymentRecord, InterestRate
 from .model import AIModel
 from .review import ReviewApplication
 from .decision import DecisionRule, DecisionExecution, DecisionTestCase, DecisionStatistics
+from .app_blacklist import AppBlacklist
+from .call_blacklist import CallBlacklist
 
 __all__ = ["Article", "Announcement", "UserAuth",
            "UserSignLog", "UserApplication", "UserBehavior", "UserProfile",
            "LoanRecord", "RepaymentRecord", "InterestRate", "AIModel", "ReviewApplication",
-           "DecisionRule", "DecisionExecution", "DecisionTestCase", "DecisionStatistics"]
+           "DecisionRule", "DecisionExecution", "DecisionTestCase", "DecisionStatistics",
+           "AppBlacklist", "CallBlacklist"]
 
