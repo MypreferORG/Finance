@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS `user_image_record` (
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
     INDEX `idx_user_image_user` (`user_id`),
     INDEX `idx_user_image_type` (`image_type`),
+    INDEX `idx_user_image_file` (`file_name`),
     CONSTRAINT `fk_user_image_user` FOREIGN KEY (`user_id`) REFERENCES `user_auth` (`index`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户图片记录表';
 

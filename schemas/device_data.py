@@ -122,9 +122,16 @@ class DeviceDataResponse(BaseModel):
                 "data": {
                     "batch_id": "batch_20251202_abc123",
                     "sms_count": 10,
+                    "sms_skipped": 0,
                     "app_count": 50,
+                    "app_updated": 0,
+                    "app_skipped": 0,
                     "contact_count": 100,
-                    "image_count": 2
+                    "contact_updated": 0,
+                    "contact_skipped": 0,
+                    "image_count": 2,
+                    "image_skipped": 0,
+                    "duplicates_skipped": 0
                 }
             }
         }

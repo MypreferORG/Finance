@@ -21,7 +21,7 @@ from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityReq
 from schemas.device_data import DeviceDataRequest, DeviceDataResponse
 from core.dependences import user_required
 from schemas.user import BindBankAccountRequest
-# from services.identity_service import is_valid_id_card, verify_id_card_photo, verify_identity_with_third_party
+from services.identity_service import is_valid_id_card, verify_id_card_photo, verify_identity_with_third_party
 
 from utils.model2dict import model_to_raw_dict
 from utils.save import save_idcard_photo
@@ -350,6 +350,11 @@ async def upload_device_data(
     Returns:
         上传结果，包括批次ID和各类数据数量
     """
+    # 去重逻辑说明:
+    # - SMS: 去重依据 (user, telphone, content, send_date)
+    # - App: 优先依据 pkg_name, 否则依据 name。若已存在则尝试更新版本/时间等信息
+    # - Contact: 去重依据 (user, phone_number)，若 display_name 不同则更新
+    # - Image: 优先依据 image_url 去重，其次依据 (file_name, file_size)。若元信息不同则更新
     try:
         # 生成批次ID
         batch_id = f"batch_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
@@ -360,6 +365,13 @@ async def upload_device_data(
         app_count = 0
         contact_count = 0
         image_count = 0
+        # 去重/更新计数
+        sms_skipped = 0
+        app_skipped = 0
+        app_updated = 0
+        contact_skipped = 0
+        contact_updated = 0
+        image_skipped = 0
         
         # 确定数据类型
         data_types = []
@@ -401,15 +413,24 @@ async def upload_device_data(
                             pass
                     
                     sms_type = "received" if sms.type == "1" else "sent"
-                    
-                    await UserSmsRecord.create(
-                        user=user,
-                        telphone=sms.telphone,
-                        content=sms.content,
-                        send_date=send_date,
-                        sms_type=sms_type
-                    )
-                    sms_count += 1
+                    # 检查是否已存在（user+telphone+content+send_date）
+                    content_norm = sms.content.strip() if isinstance(sms.content, str) else sms.content
+                    telphone_norm = sms.telphone.strip() if isinstance(sms.telphone, str) else sms.telphone
+                    filter_kwargs = {"user": user, "telphone": telphone_norm, "content": content_norm}
+                    if send_date:
+                        filter_kwargs["send_date"] = send_date
+                    existing_sms = await UserSmsRecord.get_or_none(**filter_kwargs)
+                    if existing_sms:
+                        sms_skipped += 1
+                    else:
+                        await UserSmsRecord.create(
+                            user=user,
+                            telphone=telphone_norm,
+                            content=content_norm,
+                            send_date=send_date,
+                            sms_type=sms_type
+                        )
+                        sms_count += 1
                 except Exception as e:
                     logger.warning(f"保存短信失败: {e}")
         
@@ -430,17 +451,49 @@ async def upload_device_data(
                         except ValueError:
                             pass
                     
-                    await UserAppRecord.create(
-                        user=user,
-                        name=app.name,
-                        pkg_name=app.pkg_name,
-                        version_name=app.version_name,
-                        version_code=app.version_code,
-                        is_system_app=app.is_system_app or False,
-                        install_time=install_time,
-                        last_update_time=last_update_time
-                    )
-                    app_count += 1
+                    # 去重：优先使用 pkg_name, 否则使用 name
+                    pkg_name_norm = app.pkg_name.strip() if isinstance(app.pkg_name, str) else app.pkg_name
+                    name_norm = app.name.strip() if isinstance(app.name, str) else app.name
+                    if pkg_name_norm:
+                        existing_app = await UserAppRecord.get_or_none(user=user, pkg_name=pkg_name_norm)
+                    else:
+                        existing_app = await UserAppRecord.get_or_none(user=user, name=name_norm)
+
+                    if existing_app:
+                        # 更新字段（优先写入非空值）
+                        updated = False
+                        if app.version_name and app.version_name != existing_app.version_name:
+                            existing_app.version_name = app.version_name
+                            updated = True
+                        if app.version_code and app.version_code != existing_app.version_code:
+                            existing_app.version_code = app.version_code
+                            updated = True
+                        if app.is_system_app is not None and app.is_system_app != existing_app.is_system_app:
+                            existing_app.is_system_app = app.is_system_app
+                            updated = True
+                        if install_time and install_time != existing_app.install_time:
+                            existing_app.install_time = install_time
+                            updated = True
+                        if last_update_time and last_update_time != existing_app.last_update_time:
+                            existing_app.last_update_time = last_update_time
+                            updated = True
+                        if updated:
+                            await existing_app.save()
+                            app_updated += 1
+                        else:
+                            app_skipped += 1
+                    else:
+                        await UserAppRecord.create(
+                            user=user,
+                            name=name_norm,
+                            pkg_name=pkg_name_norm,
+                            version_name=app.version_name,
+                            version_code=app.version_code,
+                            is_system_app=app.is_system_app or False,
+                            install_time=install_time,
+                            last_update_time=last_update_time
+                        )
+                        app_count += 1
                 except Exception as e:
                     logger.warning(f"保存应用记录失败: {e}")
         
@@ -448,14 +501,25 @@ async def upload_device_data(
         if request.contact_list:
             for contact in request.contact_list:
                 try:
-                    await UserContactRecord.create(
-                        user=user,
-                        display_name=contact.display_name,
-                        phone_number=contact.phone_number,
-                        phone_number_raw=contact.phone_number_raw,
-                        phone_type=contact.phone_type
-                    )
-                    contact_count += 1
+                    phone_norm = contact.phone_number.strip() if isinstance(contact.phone_number, str) else contact.phone_number
+                    existing_contact = await UserContactRecord.get_or_none(user=user, phone_number=phone_norm)
+                    if existing_contact:
+                        # 如果 display_name 有变更则更新
+                        if contact.display_name and contact.display_name != existing_contact.display_name:
+                            existing_contact.display_name = contact.display_name
+                            await existing_contact.save()
+                            contact_updated += 1
+                        else:
+                            contact_skipped += 1
+                    else:
+                        await UserContactRecord.create(
+                            user=user,
+                            display_name=contact.display_name,
+                            phone_number=phone_norm,
+                            phone_number_raw=contact.phone_number_raw,
+                            phone_type=contact.phone_type
+                        )
+                        contact_count += 1
                 except Exception as e:
                     logger.warning(f"保存联系人失败: {e}")
         
@@ -468,42 +532,86 @@ async def upload_device_data(
                     # 优先使用 path 作为 image_url 的存储值
                     image_url = getattr(image, 'path', None) or getattr(image, 'image_url', None)
                     file_name = getattr(image, 'name', None)
+                    if isinstance(file_name, str):
+                        file_name = file_name.strip()
                     file_size = getattr(image, 'size', None)
                     mime_type = getattr(image, 'mime_type', None) or getattr(image, 'type', None)
 
-                    await UserImageRecord.create(
-                        user=user,
-                        image_type=image_type,
-                        image_url=image_url,
-                        file_name=file_name,
-                        file_size=file_size,
-                        mime_type=mime_type,
-                        image_data=getattr(image, 'image_data', None)
-                    )
-                    image_count += 1
+                    # 去重：优先使用 image_url 去重，其次使用 file_name + file_size
+                    existing_image = None
+                    if image_url:
+                        existing_image = await UserImageRecord.get_or_none(user=user, image_url=image_url)
+                    elif file_name and file_size:
+                        existing_image = await UserImageRecord.get_or_none(user=user, file_name=file_name, file_size=file_size)
+
+                    if existing_image:
+                        # 如果元信息有变化则更新
+                        updated = False
+                        if image_type and image_type != existing_image.image_type:
+                            existing_image.image_type = image_type
+                            updated = True
+                        if mime_type and mime_type != existing_image.mime_type:
+                            existing_image.mime_type = mime_type
+                            updated = True
+                        if file_name and file_name != existing_image.file_name:
+                            existing_image.file_name = file_name
+                            updated = True
+                        if file_size and file_size != existing_image.file_size:
+                            existing_image.file_size = file_size
+                            updated = True
+                        new_image_data = getattr(image, 'image_data', None)
+                        if new_image_data and new_image_data != existing_image.image_data:
+                            existing_image.image_data = new_image_data
+                            updated = True
+                        if updated:
+                            await existing_image.save()
+                            image_count += 1
+                        else:
+                            image_skipped += 1
+                    else:
+                        await UserImageRecord.create(
+                            user=user,
+                            image_type=image_type,
+                            image_url=image_url,
+                            file_name=file_name,
+                            file_size=file_size,
+                            mime_type=mime_type,
+                            image_data=getattr(image, 'image_data', None)
+                        )
+                        image_count += 1
                 except Exception as e:
                     logger.warning(f"保存图片记录失败: {e}")
         
         # 更新批次记录
-        success_count = sms_count + app_count + contact_count + image_count
-        failed_count = total_count - success_count
-        
+        success_count = sms_count + app_count + app_updated + contact_count + contact_updated + image_count
+        duplicates_skipped_total = sms_skipped + app_skipped + contact_skipped + image_skipped
+        failed_count = total_count - success_count - duplicates_skipped_total
+        if failed_count < 0:
+            failed_count = 0
+
         batch_record.success_count = success_count
         batch_record.failed_count = failed_count
         batch_record.status = "completed"
         await batch_record.save()
-        
-        logger.info(f"用户 {user.id} 设备数据上传完成，成功: {success_count}, 失败: {failed_count}")
-        
+
+        logger.info(f"用户 {user.id} 设备数据上传完成，成功: {success_count}, 失败: {failed_count}, 去重跳过: {duplicates_skipped_total}")
+
         return DeviceDataResponse(
             code=200,
             message="数据上传成功",
             data={
                 "batch_id": batch_id,
                 "sms_count": sms_count,
+                "sms_skipped": sms_skipped,
                 "app_count": app_count,
+                "app_updated": app_updated,
+                "app_skipped": app_skipped,
                 "contact_count": contact_count,
+                "contact_updated": contact_updated,
+                "contact_skipped": contact_skipped,
                 "image_count": image_count,
+                "image_skipped": image_skipped,
+                "duplicates_skipped": duplicates_skipped_total,
                 "total_success": success_count,
                 "total_failed": failed_count
             }
