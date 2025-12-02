@@ -39,6 +39,25 @@ class NodeType(str, Enum):
     DECISION = "decision"
     DATA_SOURCE = "data_source"
     MODEL = "model"
+    BLACKLIST = "blacklist"
+
+
+class BlacklistDetectionType(str, Enum):
+    """黑名单检测类型枚举"""
+    SMS = "sms"           # 短信检测
+    CONTACTS = "contacts" # 通讯录检测
+    IMAGE = "image"       # 图像检测
+    APP_LIST = "appList"  # 应用列表检测
+
+
+class BlacklistNodeData(BaseModel):
+    """黑名单节点数据"""
+    label: str = "黑名单检测"
+    detectionType: BlacklistDetectionType
+    threshold: float = Field(default=0.5, ge=0, le=1)  # 0-1之间
+    blacklistSource: str = "all"  # internal/external/all
+    timeout: int = Field(default=30, ge=1)  # 超时秒数
+    passOnError: bool = True  # 出错时是否通过
 
 
 class VariableType(str, Enum):

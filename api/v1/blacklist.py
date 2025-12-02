@@ -13,8 +13,10 @@ from models import AppBlacklist, CallBlacklist
 from schemas.blacklist import (
     AppBlacklistCreateRequest, AppBlacklistResponse, AppBlacklistListResponse,
     CallBlacklistCreateRequest, CallBlacklistResponse, CallBlacklistListResponse,
-    DeleteSuccessResponse, AppInfoCheckRequest, ContactInfoCheckRequest
+    DeleteSuccessResponse, AppInfoCheckRequest, ContactInfoCheckRequest,
+    SmsBatchCheckRequest, SmsCheckResponse
 )
+from utils.message_retrieval import comprehensive_risk_analysis
 
 router = APIRouter()
 
@@ -128,3 +130,80 @@ async def call_check_contacts(contacts: List[ContactInfoCheckRequest]):
         return False
     exists = await CallBlacklist.filter(phone_number__in=list(set(numbers))).exists()
     return exists
+
+
+# ------------------ 短信风险检测 ------------------
+@router.post("/sms/check", summary="短信风险检测(Embedding+LLM)", response_model=SmsCheckResponse)
+async def sms_risk_check(data: SmsBatchCheckRequest):
+    """
+    短信风险检测接口
+    - 使用 Embedding 粗筛 + Qwen LLM 精判
+    - 返回风险决策和详细分析
+    """
+    if not data.sms_list:
+        return SmsCheckResponse(
+            hit=False,
+            risk_score=0.0,
+            final_decision="PASS",
+            risk_tags=[],
+            analysis_summary="无短信数据"
+        )
+    
+    # 转换为工具函数需要的格式
+    sms_data = [
+        {
+            "telphone": sms.telphone or "",
+            "content": sms.content,
+            "sendDate": sms.sendDate or ""
+        }
+        for sms in data.sms_list
+    ]
+    
+    # 调用风控分析
+    result = comprehensive_risk_analysis(sms_data)
+    
+    decision = result.get("final_decision", "PASS")
+    
+    # 决策映射到风险分数
+    decision_score_map = {
+        "PASS": 0.0,
+        "LOWER_SCORE": 0.4,
+        "LOWER_LIMIT": 0.5,
+        "MANUAL_REVIEW": 0.7,
+        "REJECT": 1.0
+    }
+    risk_score = decision_score_map.get(decision, 0.5)
+    
+    return SmsCheckResponse(
+        hit=decision != "PASS",
+        risk_score=risk_score,
+        final_decision=decision,
+        risk_tags=result.get("risk_tags", []),
+        analysis_summary=result.get("analysis_summary"),
+        raw_risk_count=result.get("raw_risk_count", 0)
+    )
+
+
+@router.post("/sms/check_simple", summary="短信风险检测(简化版-仅返回是否命中)", response_model=bool)
+async def sms_check_simple(data: SmsBatchCheckRequest):
+    """
+    短信风险检测简化接口
+    - 返回 True 表示命中风险，False 表示通过
+    """
+    if not data.sms_list:
+        return False
+    
+    sms_data = [
+        {
+            "telphone": sms.telphone or "",
+            "content": sms.content,
+            "sendDate": sms.sendDate or ""
+        }
+        for sms in data.sms_list
+    ]
+    
+    result = comprehensive_risk_analysis(sms_data)
+    decision = result.get("final_decision", "PASS")
+    
+    # PASS 表示未命中，其他都算命中
+    return decision != "PASS"

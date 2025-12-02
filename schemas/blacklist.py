@@ -94,3 +94,35 @@ class ContactInfoBatchCheckRequest(BaseModel):
     class Config:
         from_attributes = True
 
+
+# ---------------- 短信检测相关结构 ----------------
+class SmsInfoCheckRequest(BaseModel):
+    """单条短信信息"""
+    telphone: Optional[str] = None  # 发送者号码
+    content: str                     # 短信内容
+    sendDate: Optional[str] = None   # 发送时间
+
+    class Config:
+        from_attributes = True
+
+
+class SmsBatchCheckRequest(BaseModel):
+    """批量短信检测请求"""
+    sms_list: List[SmsInfoCheckRequest]
+
+    class Config:
+        from_attributes = True
+
+
+class SmsCheckResponse(BaseModel):
+    """短信检测响应"""
+    hit: bool                        # 是否命中风险
+    risk_score: float                # 风险分数 0-1
+    final_decision: str              # 决策: PASS/REJECT/MANUAL_REVIEW/LOWER_SCORE/LOWER_LIMIT
+    risk_tags: Optional[List[str]] = None    # 风险标签
+    analysis_summary: Optional[str] = None   # 分析摘要
+    raw_risk_count: Optional[int] = None     # 命中可疑短信数量
+
+    class Config:
+        from_attributes = True
+

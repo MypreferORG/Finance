@@ -15,12 +15,16 @@ from tortoise.expressions import Q
 from tortoise.transactions import in_transaction
 
 from models.decision import DecisionRule, DecisionExecution, DecisionTestCase, DecisionStatistics
+from models.app_blacklist import AppBlacklist
+from models.call_blacklist import CallBlacklist
+from models.user_device_data import UserSmsRecord, UserAppRecord, UserContactRecord, UserImageRecord
 from schemas.decision import (
     DecisionRuleCreate, DecisionRuleUpdate, RuleValidationRequest,
     ExecutionRequest, TestCase, RuleStatus, ExecutionStatus, NodeType,
     RuleStatusUpdate, BatchStatusUpdate, BatchUpdateResult,
-    TestCaseCreate, TestCaseUpdate
+    TestCaseCreate, TestCaseUpdate, BlacklistDetectionType
 )
+from utils.message_retrieval import comprehensive_risk_analysis
 from pydantic import BaseModel
 from enum import Enum
 
@@ -192,6 +196,26 @@ class DecisionEngineService:
                 condition = node.data["condition"]
                 if not DecisionEngineService._validate_condition_expression(condition):
                     errors.append(f"节点 {node.id} 的条件表达式语法错误")
+
+            # 检查黑名单节点
+            if getattr(node.type, 'value', node.type) == NodeType.BLACKLIST.value:
+                data = node.data
+                
+                # 验证检测类型
+                detection_type = data.get('detectionType')
+                valid_types = [t.value for t in BlacklistDetectionType]
+                if detection_type not in valid_types:
+                    errors.append(f"节点 {node.id} 的检测类型无效: {detection_type}")
+                
+                # 验证阈值范围
+                threshold = data.get('threshold', 0.5)
+                if not (0 <= threshold <= 1):
+                    errors.append(f"节点 {node.id} 的阈值必须在0-1之间")
+                
+                # 验证黑名单节点必须有两个出口连线
+                outgoing_edges = [e for e in edges if e.source == node.id]
+                if len(outgoing_edges) < 1:
+                    errors.append(f"黑名单节点 {node.id} 至少需要一个输出连线")
                     
         # 检查变量定义
         # used_variables = set()
@@ -446,8 +470,256 @@ class DecisionEngineService:
                 formula = node_data.get("formula", "0")
                 result = DecisionEngineService._evaluate_formula(formula, context)
                 return {"calculation_result": result}
+
+        elif node_type == "blacklist":
+            # 黑名单节点
+            return await DecisionEngineService._execute_blacklist(node, context)
                 
         return {}
+
+    @staticmethod
+    async def _execute_blacklist(node: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+        """执行黑名单检测节点"""
+        data = node.get('data', {})
+        detection_type = data.get('detectionType', 'sms')
+        threshold = data.get('threshold', 0.5)
+        blacklist_source = data.get('blacklistSource', 'all')
+        timeout = data.get('timeout', 30)
+        pass_on_error = data.get('passOnError', True)
+        
+        try:
+            # 根据检测类型调用对应的黑名单服务
+            risk_score = await DecisionEngineService._call_blacklist_service(
+                detection_type=detection_type,
+                input_data=context,
+                source=blacklist_source,
+                timeout=timeout
+            )
+            
+            # 根据阈值判断通过/拒绝
+            passed = risk_score < threshold
+            
+            return {
+                'passed': passed,
+                'risk_score': risk_score,
+                'threshold': threshold,
+                'detection_type': detection_type,
+                'output_handle': 'pass' if passed else 'reject'
+            }
+            
+        except Exception as e:
+            if pass_on_error:
+                return {
+                    'passed': True,
+                    'risk_score': 0,
+                    'error': str(e),
+                    'output_handle': 'pass'
+                }
+            else:
+                return {
+                    'passed': False,
+                    'risk_score': 1,
+                    'error': str(e),
+                    'output_handle': 'reject'
+                }
+
+    @staticmethod
+    async def _call_blacklist_service(
+        detection_type: str, 
+        input_data: Dict[str, Any], 
+        source: str,
+        timeout: int
+    ) -> float:
+        """调用黑名单检测服务"""
+        # 根据检测类型选择对应的检测方法
+        if detection_type == BlacklistDetectionType.SMS.value:
+            return await DecisionEngineService._detect_sms_blacklist(input_data, source, timeout)
+        elif detection_type == BlacklistDetectionType.CONTACTS.value:
+            return await DecisionEngineService._detect_contacts_blacklist(input_data, source, timeout)
+        elif detection_type == BlacklistDetectionType.IMAGE.value:
+            return await DecisionEngineService._detect_image_blacklist(input_data, source, timeout)
+        elif detection_type == BlacklistDetectionType.APP_LIST.value:
+            return await DecisionEngineService._detect_applist_blacklist(input_data, source, timeout)
+        else:
+            raise ValueError(f"不支持的检测类型: {detection_type}")
+
+    @staticmethod
+    async def _detect_sms_blacklist(input_data: Dict[str, Any], source: str, timeout: int) -> float:
+        """短信黑名单检测 - 使用 Embedding + LLM 风控分析"""
+        # 优先从 input_data 获取，否则从数据库获取
+        sms_list = input_data.get('sms_list', [])
+        
+        if not sms_list:
+            # 尝试从数据库获取用户短信
+            user_id = input_data.get('user_id') or input_data.get('user.id')
+            if user_id:
+                sms_records = await UserSmsRecord.filter(user_id=user_id).order_by('-send_date').limit(200)
+                sms_list = [
+                    {
+                        "telphone": r.telphone or "",
+                        "content": r.content,
+                        "sendDate": r.send_date.strftime("%Y-%m-%d %H:%M:%S") if r.send_date else ""
+                    }
+                    for r in sms_records
+                ]
+        
+        if not sms_list:
+            return 0.0
+        
+        try:
+            # 调用短信风控分析服务
+            result = comprehensive_risk_analysis(sms_list)
+            decision = result.get('final_decision', 'PASS')
+            
+            # 根据决策结果映射风险分数
+            decision_score_map = {
+                'PASS': 0.0,
+                'LOWER_SCORE': 0.4,
+                'LOWER_LIMIT': 0.5,
+                'MANUAL_REVIEW': 0.7,
+                'REJECT': 1.0
+            }
+            return decision_score_map.get(decision, 0.5)
+        except Exception as e:
+            # 出错时返回中等风险
+            return 0.5
+
+    @staticmethod
+    async def _detect_contacts_blacklist(input_data: Dict[str, Any], source: str, timeout: int) -> float:
+        """通讯录黑名单检测 - 查询电话黑名单库"""
+        import re
+        contacts = input_data.get('contacts', [])
+        
+        if not contacts:
+            # 尝试从数据库获取用户通讯录
+            user_id = input_data.get('user_id') or input_data.get('user.id')
+            if user_id:
+                contact_records = await UserContactRecord.filter(user_id=user_id)
+                contacts = [
+                    {
+                        "displayName": r.display_name,
+                        "phone": r.phone_number
+                    }
+                    for r in contact_records
+                ]
+        
+        if not contacts:
+            return 0.0
+        
+        # 提取所有电话号码并归一化
+        numbers = []
+        for contact in contacts:
+            if isinstance(contact, dict):
+                # 支持两种格式：直接 phone 字段或 phoneNumbers 列表
+                phone = contact.get('phone', '')
+                if phone:
+                    numbers.append(re.sub(r"\D", "", phone))
+                phone_numbers = contact.get('phoneNumbers', [])
+                for item in phone_numbers:
+                    if isinstance(item, dict) and item.get('value'):
+                        numbers.append(re.sub(r"\D", "", item['value']))
+        
+        numbers = [n for n in numbers if n]
+        if not numbers:
+            return 0.0
+        
+        # 查询数据库
+        hit_count = await CallBlacklist.filter(phone_number__in=list(set(numbers))).count()
+        
+        # 根据命中数量计算风险分
+        if hit_count == 0:
+            return 0.0
+        elif hit_count <= 2:
+            return 0.4
+        elif hit_count <= 5:
+            return 0.7
+        else:
+            return 1.0
+
+    @staticmethod
+    async def _detect_image_blacklist(input_data: Dict[str, Any], source: str, timeout: int) -> float:
+        """图像黑名单检测 - OCR/人脸识别等"""
+        images = input_data.get('images', [])
+        
+        if not images:
+            # 尝试从数据库获取用户图片
+            user_id = input_data.get('user_id') or input_data.get('user.id')
+            if user_id:
+                image_records = await UserImageRecord.filter(user_id=user_id)
+                images = [
+                    {
+                        "type": r.image_type,
+                        "url": r.image_url,
+                        "ocr_result": r.ocr_result,
+                        "verify_status": r.verify_status
+                    }
+                    for r in image_records
+                ]
+        
+        if not images:
+            return 0.0
+        
+        # 检查是否有验证失败的图片
+        failed_count = sum(1 for img in images if isinstance(img, dict) and img.get('verify_status') == 'failed')
+        if failed_count > 0:
+            return 1.0
+        
+        # TODO: 集成实际的图像检测服务（OCR识别、人脸比对、证件真伪等）
+        return 0.0
+
+    @staticmethod
+    async def _detect_applist_blacklist(input_data: Dict[str, Any], source: str, timeout: int) -> float:
+        """应用列表黑名单检测 - 查询应用黑名单库"""
+        from tortoise.expressions import Q
+        app_list = input_data.get('app_list', [])
+        
+        if not app_list:
+            # 尝试从数据库获取用户应用列表
+            user_id = input_data.get('user_id') or input_data.get('user.id')
+            if user_id:
+                app_records = await UserAppRecord.filter(user_id=user_id)
+                app_list = [
+                    {
+                        "name": r.name,
+                        "pkgName": r.pkg_name,
+                        "versionName": r.version_name,
+                        "isSystemApp": r.is_system_app
+                    }
+                    for r in app_records
+                ]
+        
+        if not app_list:
+            return 0.0
+        
+        # 提取应用名称
+        names = []
+        for app in app_list:
+            if isinstance(app, dict):
+                name = app.get('name', '').strip()
+                if name:
+                    names.append(name)
+        
+        if not names:
+            return 0.0
+        
+        # 构建查询条件（不区分大小写匹配）
+        cond = None
+        for name in names:
+            q = Q(name__iexact=name)
+            cond = q if cond is None else (cond | q)
+        
+        # 查询数据库
+        hit_count = await AppBlacklist.filter(cond).count() if cond else 0
+        
+        # 根据命中数量计算风险分
+        if hit_count == 0:
+            return 0.0
+        elif hit_count <= 2:
+            return 0.4
+        elif hit_count <= 5:
+            return 0.7
+        else:
+            return 1.0
 
     @staticmethod
     def _evaluate_condition(condition: str, context: Dict[str, Any]) -> bool:
@@ -513,6 +785,12 @@ class DecisionEngineService:
     @staticmethod
     def _should_follow_edge(node: Dict[str, Any], node_result: Dict[str, Any], edge: Dict[str, Any]) -> bool:
         """判断是否应该沿着边走"""
+        # 优先检查 sourceHandle (用于黑名单节点等双输出节点)
+        if "output_handle" in node_result:
+            source_handle = edge.get("sourceHandle")
+            if source_handle:
+                return source_handle == node_result["output_handle"]
+
         edge_type = edge.get("type", "default")
         
         if edge_type == "default":

@@ -7,7 +7,7 @@
 
 from fastapi import APIRouter
 
-from api.v1 import auth, user, loan, notification, article, announcement, support, blacklist, sms
+from api.v1 import auth, user, loan, notification, article, announcement, support, blacklist
 
 # 创建一个APIRouter实例，用于统一管理所有用户API
 user_api_router = APIRouter(
@@ -28,5 +28,3 @@ user_api_router.include_router(
     support.router, prefix="/support", tags=["客服功能"])
 user_api_router.include_router(
     blacklist.router, prefix="/blacklist", tags=["黑名单功能"])
-user_api_router.include_router(
-    sms.router, prefix="/user", tags=["短信风控"])

