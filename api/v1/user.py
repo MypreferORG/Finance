@@ -419,7 +419,12 @@ async def upload_device_data(
                     filter_kwargs = {"user": user, "telphone": telphone_norm, "content": content_norm}
                     if send_date:
                         filter_kwargs["send_date"] = send_date
-                    existing_sms = await UserSmsRecord.get_or_none(**filter_kwargs)
+                    # 注意: get_or_none 会抛出 MultipleObjectsReturned，如果 DB 有重复记录。
+                    # 使用 filter().first() 避免抛异常，并记录是否存在多个重复项以便清理。
+                    existing_sms_count = await UserSmsRecord.filter(**filter_kwargs).count()
+                    if existing_sms_count > 1:
+                        logger.warning(f"用户 {user.id} 存在多条相同短信记录，filter={filter_kwargs}, count={existing_sms_count}")
+                    existing_sms = await UserSmsRecord.filter(**filter_kwargs).first()
                     if existing_sms:
                         sms_skipped += 1
                     else:
@@ -455,9 +460,15 @@ async def upload_device_data(
                     pkg_name_norm = app.pkg_name.strip() if isinstance(app.pkg_name, str) else app.pkg_name
                     name_norm = app.name.strip() if isinstance(app.name, str) else app.name
                     if pkg_name_norm:
-                        existing_app = await UserAppRecord.get_or_none(user=user, pkg_name=pkg_name_norm)
+                        existing_app_count = await UserAppRecord.filter(user=user, pkg_name=pkg_name_norm).count()
+                        if existing_app_count > 1:
+                            logger.warning(f"用户 {user.id} 存在多条相同应用记录 pkg_name={pkg_name_norm}, count={existing_app_count}")
+                        existing_app = await UserAppRecord.filter(user=user, pkg_name=pkg_name_norm).first()
                     else:
-                        existing_app = await UserAppRecord.get_or_none(user=user, name=name_norm)
+                        existing_app_count = await UserAppRecord.filter(user=user, name=name_norm).count()
+                        if existing_app_count > 1:
+                            logger.warning(f"用户 {user.id} 存在多条相同应用记录 name={name_norm}, count={existing_app_count}")
+                        existing_app = await UserAppRecord.filter(user=user, name=name_norm).first()
 
                     if existing_app:
                         # 更新字段（优先写入非空值）
@@ -502,7 +513,10 @@ async def upload_device_data(
             for contact in request.contact_list:
                 try:
                     phone_norm = contact.phone_number.strip() if isinstance(contact.phone_number, str) else contact.phone_number
-                    existing_contact = await UserContactRecord.get_or_none(user=user, phone_number=phone_norm)
+                    existing_contact_count = await UserContactRecord.filter(user=user, phone_number=phone_norm).count()
+                    if existing_contact_count > 1:
+                        logger.warning(f"用户 {user.id} 存在多条相同联系人记录 phone={phone_norm}, count={existing_contact_count}")
+                    existing_contact = await UserContactRecord.filter(user=user, phone_number=phone_norm).first()
                     if existing_contact:
                         # 如果 display_name 有变更则更新
                         if contact.display_name and contact.display_name != existing_contact.display_name:
@@ -540,9 +554,15 @@ async def upload_device_data(
                     # 去重：优先使用 image_url 去重，其次使用 file_name + file_size
                     existing_image = None
                     if image_url:
-                        existing_image = await UserImageRecord.get_or_none(user=user, image_url=image_url)
+                        existing_image_count = await UserImageRecord.filter(user=user, image_url=image_url).count()
+                        if existing_image_count > 1:
+                            logger.warning(f"用户 {user.id} 存在多条相同图片记录 image_url={image_url}, count={existing_image_count}")
+                        existing_image = await UserImageRecord.filter(user=user, image_url=image_url).first()
                     elif file_name and file_size:
-                        existing_image = await UserImageRecord.get_or_none(user=user, file_name=file_name, file_size=file_size)
+                        existing_image_count = await UserImageRecord.filter(user=user, file_name=file_name, file_size=file_size).count()
+                        if existing_image_count > 1:
+                            logger.warning(f"用户 {user.id} 存在多条相同图片记录 file_name={file_name}, file_size={file_size}, count={existing_image_count}")
+                        existing_image = await UserImageRecord.filter(user=user, file_name=file_name, file_size=file_size).first()
 
                     if existing_image:
                         # 如果元信息有变化则更新
