@@ -75,8 +75,15 @@ class UserImageRecord(Model):
     """用户图片记录表（身份证、人脸等）"""
     id = fields.IntField(pk=True, description="主键ID")
     user = fields.ForeignKeyField("finance.UserAuth", related_name="image_records", description="关联的用户")
-    image_type = fields.CharField(max_length=50, description="图片类型: id_card_front/id_card_back/face/other")
+    # 语义化的图片类型：id_card_front/id_card_back/face/other
+    image_type = fields.CharField(max_length=50, null=True, description="图片类型: id_card_front/id_card_back/face/other")
+    # 存储上传的文件路径或URL
     image_url = fields.CharField(max_length=500, null=True, description="图片URL或路径")
+    # 客户端传递的文件名、大小与 MIME 类型
+    file_name = fields.CharField(max_length=255, null=True, description="上传文件名")
+    file_size = fields.IntField(null=True, description="文件大小（字节）")
+    mime_type = fields.CharField(max_length=64, null=True, description="MIME 类型，如 image/jpeg")
+    # 备用：base64 数据
     image_data = fields.TextField(null=True, description="图片Base64数据(可选)")
     ocr_result = fields.JSONField(null=True, description="OCR识别结果")
     verify_status = fields.CharField(max_length=20, default="pending", description="验证状态: pending/passed/failed")
@@ -87,10 +94,10 @@ class UserImageRecord(Model):
 
     class Meta:
         table = "user_image_record"
-        indexes = [("user",), ("image_type",)]
+        indexes = [("user",), ("image_type",), ("file_name",)]
 
     def __str__(self):
-        return f"UserImageRecord(user={self.user_id}, type={self.image_type})"
+        return f"UserImageRecord(user={self.user_id}, type={self.image_type}, name={self.file_name})"
 
 
 class UserDeviceDataBatch(Model):

@@ -42,9 +42,18 @@ class ContactItem(BaseModel):
 
 # ============= 图片相关 =============
 class ImageItem(BaseModel):
-    """单张图片数据"""
-    image_type: str = Field(..., description="图片类型: id_card_front/id_card_back/face/other")
-    image_url: Optional[str] = Field(None, description="图片URL或路径")
+    """单张图片数据（支持移动设备上传的路径/文件名/大小/类型等）"""
+    # 可选的语义化类型，如 id_card_front/id_card_back/face/other
+    image_type: Optional[str] = Field(None, description="图片类型: id_card_front/id_card_back/face/other")
+    # 本地存储或上传路径 (客户端示例: /storage/emulated/0/DCIM/Camera/IMG.jpg)
+    path: Optional[str] = Field(None, description="图片文件路径或URL")
+    # 文件名
+    name: Optional[str] = Field(None, description="文件名")
+    # 文件大小，字节
+    size: Optional[int] = Field(None, description="文件大小（字节）")
+    # MIME 类型，例如 image/jpeg
+    mime_type: Optional[str] = Field(None, alias="type", description="MIME 类型，如 image/jpeg")
+    # 备用：base64 数据
     image_data: Optional[str] = Field(None, description="图片Base64数据(可选)")
 
 
@@ -68,6 +77,7 @@ class DeviceDataRequest(BaseModel):
     device_info: Optional[DeviceInfo] = Field(None, description="设备信息")
     
     class Config:
+        allow_population_by_field_name = True
         json_schema_extra = {
             "example": {
                 "sms_list": [
@@ -83,7 +93,16 @@ class DeviceDataRequest(BaseModel):
                     "brand": "Xiaomi",
                     "model": "Mi 11",
                     "system": "Android"
-                }
+                },
+                "image_list": [
+                    {
+                        "image_type": "id_card_front",
+                        "path": "/storage/emulated/0/DCIM/Camera/IMG_20241201_100000.jpg",
+                        "name": "IMG_20241201_100000.jpg",
+                        "size": 2048000,
+                        "type": "image/jpeg"
+                    }
+                ]
             }
         }
 

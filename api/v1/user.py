@@ -463,11 +463,22 @@ async def upload_device_data(
         if request.image_list:
             for image in request.image_list:
                 try:
+                    # 支持新的图片字段: path,name,size,type
+                    image_type = getattr(image, 'image_type', None) or None
+                    # 优先使用 path 作为 image_url 的存储值
+                    image_url = getattr(image, 'path', None) or getattr(image, 'image_url', None)
+                    file_name = getattr(image, 'name', None)
+                    file_size = getattr(image, 'size', None)
+                    mime_type = getattr(image, 'mime_type', None) or getattr(image, 'type', None)
+
                     await UserImageRecord.create(
                         user=user,
-                        image_type=image.image_type,
-                        image_url=image.image_url,
-                        image_data=image.image_data
+                        image_type=image_type,
+                        image_url=image_url,
+                        file_name=file_name,
+                        file_size=file_size,
+                        mime_type=mime_type,
+                        image_data=getattr(image, 'image_data', None)
                     )
                     image_count += 1
                 except Exception as e:

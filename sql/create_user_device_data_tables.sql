@@ -54,8 +54,11 @@ CREATE TABLE IF NOT EXISTS `user_contact_record` (
 CREATE TABLE IF NOT EXISTS `user_image_record` (
     `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     `user_id` INT NOT NULL COMMENT '关联用户ID',
-    `image_type` VARCHAR(50) NOT NULL COMMENT '图片类型: id_card_front/id_card_back/face/other',
+    `image_type` VARCHAR(50) NULL COMMENT '图片类型: id_card_front/id_card_back/face/other',
     `image_url` VARCHAR(500) NULL COMMENT '图片URL或路径',
+    `file_name` VARCHAR(255) NULL COMMENT '上传的文件名',
+    `file_size` INT NULL COMMENT '文件大小（字节）',
+    `mime_type` VARCHAR(64) NULL COMMENT 'MIME 类型，例如 image/jpeg',
     `image_data` LONGTEXT NULL COMMENT '图片Base64数据(可选)',
     `ocr_result` JSON NULL COMMENT 'OCR识别结果',
     `verify_status` VARCHAR(20) DEFAULT 'pending' COMMENT '验证状态: pending/passed/failed',
